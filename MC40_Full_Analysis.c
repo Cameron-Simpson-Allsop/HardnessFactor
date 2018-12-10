@@ -144,6 +144,9 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
 
   std::cout << "MC40 Alpha (force 0) = " << alpha1 << " +/- " << ealpha1 << std::endl;
   std::cout << "MC40 Hardness Factor (force 0) = " << k1 << " +/- " << ek1 << std::endl;
+
+  std::cout << "pol1 fit equation: y = (" << theta << " +/- " << etheta << ")x + (" << fit->GetParameter(0) << " +/- " << fit->GetParError(0) << ")" << std::endl;
+  std::cout << "force 0 fit equation: y = (" << theta1 << " +/- " << etheta1 << ")x" << std::endl;
   
 }
 
