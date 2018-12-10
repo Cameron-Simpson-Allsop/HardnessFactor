@@ -1,0 +1,1029 @@
+#include "TGraphErrors.h"
+#include "TCanvas.h"
+#include "TF1.h"
+#include "TAxis.h"
+#include "TString.h"
+#include "iostream"
+
+struct CurrentWarmSetB{ 
+	float mean = 0;
+	float error = 0;
+	float fluence = 0;
+	float fluence_error = 0;
+	float voltage = 0;
+};
+
+struct CurrentWarmSetA{ 
+	float mean = 0;
+	float error = 0;
+	float fluence = 0;
+	float fluence_error = 0;
+	float voltage = 0;
+};
+
+struct CurrentColdSetB{ 
+	float mean = 0;
+	float error = 0;
+	float fluence = 0;
+	float fluence_error = 0;
+	float voltage = 0;
+};
+
+struct CurrentColdSetA{ 
+	float mean = 0;
+	float error = 0;
+	float fluence = 0;
+	float fluence_error = 0;
+	float voltage = 0;
+};
+void rootlogonATLAS(double ytoff = 1.0, bool atlasmarker =true, double left_margin=0.14) 
+{
+
+TStyle* atlasStyle= new TStyle("ATLAS","Atlas style");
+
+// use plain black on white colors
+Int_t icol=0;
+atlasStyle->SetFrameBorderMode(icol);
+atlasStyle->SetCanvasBorderMode(icol);
+atlasStyle->SetPadBorderMode(icol);
+atlasStyle->SetPadColor(icol);
+atlasStyle->SetCanvasColor(icol);
+atlasStyle->SetStatColor(icol);
+//atlasStyle->SetFillColor(icol);
+
+// set the paper & margin sizes
+atlasStyle->SetPaperSize(20,26);
+atlasStyle->SetPadTopMargin(0.05);
+atlasStyle->SetPadRightMargin(0.05);
+atlasStyle->SetPadBottomMargin(0.16);
+atlasStyle->SetPadLeftMargin(0.12);
+
+// use large fonts
+//Int_t font=72;
+Int_t font=42;
+Double_t tsize=0.05;
+atlasStyle->SetTextFont(font);
+
+
+atlasStyle->SetTextSize(tsize);
+atlasStyle->SetLabelFont(font,"x");
+atlasStyle->SetTitleFont(font,"x");
+atlasStyle->SetLabelFont(font,"y");
+atlasStyle->SetTitleFont(font,"y");
+atlasStyle->SetLabelFont(font,"z");
+atlasStyle->SetTitleFont(font,"z");
+
+atlasStyle->SetLabelSize(tsize,"x");
+atlasStyle->SetTitleSize(tsize,"x");
+atlasStyle->SetLabelSize(tsize,"y");
+atlasStyle->SetTitleSize(tsize,"y");
+atlasStyle->SetLabelSize(tsize,"z");
+atlasStyle->SetTitleSize(tsize,"z");
+
+
+//use bold lines and markers
+if ( atlasmarker ) {
+  atlasStyle->SetMarkerStyle(20);
+  atlasStyle->SetMarkerSize(1.2);
+}
+atlasStyle->SetHistLineWidth(2.);
+atlasStyle->SetLineStyleString(2,"[12 12]"); // postscript dashes
+
+//get rid of X error bars and y error bar caps
+//atlasStyle->SetErrorX(0.001);
+
+//do not display any of the standard histogram decorations
+atlasStyle->SetOptTitle(0);
+//atlasStyle->SetOptStat(1111);
+atlasStyle->SetOptStat(0);
+//atlasStyle->SetOptFit(1111);
+atlasStyle->SetOptFit(0);
+
+// put tick marks on top and RHS of plots
+atlasStyle->SetPadTickX(1);
+atlasStyle->SetPadTickY(1);
+
+//gStyle->SetPadTickX(1);
+//gStyle->SetPadTickY(1);
+
+// DLA overrides
+atlasStyle->SetPadLeftMargin(left_margin);
+atlasStyle->SetPadBottomMargin(0.13);
+atlasStyle->SetTitleYOffset(ytoff);
+atlasStyle->SetTitleXOffset(1.0);
+
+ const Int_t NRGBs = 5;
+ const Int_t NCont = 255;
+ 
+ Double_t stops[NRGBs] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
+ Double_t red[NRGBs]   = { 0.00, 0.00, 0.87, 1.00, 0.51 };
+ Double_t green[NRGBs] = { 0.00, 0.81, 1.00, 0.20, 0.00 };
+ Double_t blue[NRGBs]  = { 0.51, 1.00, 0.12, 0.00, 0.00 };
+ TColor::CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont);
+ atlasStyle->SetNumberContours(NCont);
+
+// Enforce the style.
+gROOT->SetStyle("ATLAS");
+gROOT->ForceStyle();
+}
+
+double sumvoltage = 0.;
+double esumvoltage_squared = 0.;
+double voltage = 0.;
+double evoltage = 0.;
+int nv = 0;
+
+void ExtractVoltage(TString txtName="", TString graphTitle="")
+{
+	TGraphErrors *g = new TGraphErrors(txtName); 		
+	g->GetXaxis()->SetTitle("Ln(-V) (Ln(v))");
+	g->GetYaxis()->SetTitle("Ln(C) (Ln(pF))");
+	g->GetYaxis()->SetTitleOffset(1.45);
+	g->SetTitle(graphTitle);
+		
+
+	TF1* fit1 = new TF1("fit1","pol1",2.8,4.55);
+	TF1* fit2 = new TF1("fit2","pol1",4.6,5.3);	
+	fit1->SetParameter(1,-1);
+
+	g->Fit(fit1,"RN");
+	g->Fit(fit2,"RN");
+
+	/*TCanvas *canvas = new TCanvas(txtName,txtName);
+		g->Draw("ALP");
+		fit1->Draw("same");
+		fit2->Draw("same");*/		
+
+	double c1 = fit1->GetParameter(0);
+	double m1 = fit1->GetParameter(1);
+	double c2 = fit2->GetParameter(0);
+	double m2 = fit2->GetParameter(1);
+	
+	double ec1 = fit1->GetParError(0);
+	double em1 = fit1->GetParError(1);
+	double ec2 = fit2->GetParError(0);
+	double em2 = fit2->GetParError(1);
+    double Intersect = (c2-c1)/(m1-m2); 
+	double e1 = ec2/(m1-m2);
+	double e2 = ec1/(m1-m2);
+	double e3 = em1*(c2-c1)/(pow(m1-m2,2));
+	double e4 = em2*(c2-c1)/(pow(m1-m2,2));
+    double eIntersect = pow(e1*e1+e2*e2+e3*e3+e4*e4,0.5);
+
+	sumvoltage += -exp(Intersect);
+	esumvoltage_squared += exp(Intersect)*eIntersect;
+	nv += 1;
+
+	std::cout << "Unirradiated voltage = " << sumvoltage/nv << " +/- " << pow(esumvoltage_squared,0.5)/nv << " V\n";
+	std::cout << "Unirradiated voltage sum = " << sumvoltage << " +/- " << pow(esumvoltage_squared,0.5) << " V\n";
+}
+
+void CV_Analysis()
+{
+	ExtractVoltage("Diode24_CV_2301_5kHz.txt","Diode 24 Non-Irradiated C-V 23/01 5kHz");
+	ExtractVoltage("Diode24_CV_2301_10kHz.txt","Diode 24 Non-Irradiated C-V 23/01 10kHz");
+ 	ExtractVoltage("Diode24_CV_2301_30kHz.txt","Diode 24 Non-Irradiated C-V 23/01 30kHz");
+    	ExtractVoltage("Diode24_CV_2301_60kHz.txt","Diode 24 Non-Irradiated C-V 23/01 60kHz");
+    	ExtractVoltage("Diode24_CV_2301_100kHz.txt","Diode 24 Non-Irradiated C-V 23/01 100kHz");
+
+	voltage = sumvoltage/nv;
+	evoltage = pow(esumvoltage_squared,0.5)/nv;
+	
+	std::cout << "\n";
+	std::cout << "Average unirradiated max depletion voltage = " << voltage << " +/- " << evoltage << " V\n";
+	std::cout << "\n";
+}
+
+double ExtractNonIrradiatedCurrent_Inon(TString txtName="", TString graphTitle ="", double Voltage = voltage)
+{
+	TGraphErrors *g1 = new TGraphErrors(txtName); //Sets graph parameters with errors.		
+	TF1* fit1 = new TF1("fit1","pol1", -110,-40); //Fits 1st order poly within range
+	g1->Fit(fit1,"RN"); //R = within given range. N = Don't plot.
+	double p0g = fit1->GetParameter(0); //Assigns fit parameters.
+	double p0ge = fit1->GetParError(0);
+	double p1g = fit1->GetParameter(1);
+	double p1ge = fit1->GetParError(1);
+	double Inon = abs(p1g*voltage+p0g);
+	std::cout << "Inon = " << Inon << std::endl;
+
+	return Inon;
+}
+
+double ExtractNonIrradiatedCurrent_Inonerror(TString txtName="", TString graphTitle ="", double Voltage = voltage)
+{
+	TGraphErrors *g1 = new TGraphErrors(txtName); //Sets graph parameters with errors.		
+	g1->GetXaxis()->SetTitle("Voltage(V)");
+	g1->GetYaxis()->SetTitle("Leakage Current (nA)");
+	g1->GetYaxis()->SetTitleOffset(1.45);
+	g1->SetTitle(graphTitle);
+
+	TF1* fit1 = new TF1("fit1","pol1", -110,-40); //Fits 1st order poly within range
+	g1->Fit(fit1,"RN"); //R = within given range. N = Don't plot.
+	double p0g = fit1->GetParameter(0); //Assigns fit parameters.
+	double p0ge = fit1->GetParError(0);
+	double p1g = fit1->GetParameter(1);
+	double p1ge = fit1->GetParError(1);
+
+	/*TCanvas* canvas = new TCanvas(txtName,txtName); //Defines a canvas.
+	TGaxis::SetMaxDigits(3);
+	canvas->SetRightMargin(1);
+	g1->Draw("AP"); //Draw graph with defined axes (A) and points (P).
+	fit1->Draw("same"); //Plots defined fit.*/
+
+	double Inonerror = pow(voltage*voltage*p1ge*p1ge + p0ge*p0ge + p1g*p1g*0.05*0.05,0.5);
+	std::cout << "Inonerror = " << Inonerror << std::endl;
+
+	return Inonerror;
+}
+
+CurrentWarmSetB ExtractIrradiatedCurrentWB(TString txtName="", TString graphTitle="", double Voltage = voltage)//Function to fit curves and extract current from fits at user given voltage.
+{
+	TGraphErrors *g = new TGraphErrors(txtName); //Sets graph parameters with errors.		
+	g->GetXaxis()->SetTitle("Voltage(V)");
+	g->GetYaxis()->SetTitle("Leakage Current (nA)");
+	g->GetYaxis()->SetTitleOffset(1.45);
+	g->SetTitle(graphTitle);
+
+	TF1* fit1 = new TF1("fit1","pol1", -100,-75); //Fits 1st order poly within range
+	g->Fit(fit1,"RN"); //R = within given range. N = Don't plot.
+	double p0g = fit1->GetParameter(0); //Assigns fit parameters.
+	double p0ge = fit1->GetParError(0);
+	double p1g = fit1->GetParameter(1);
+	double p1ge = fit1->GetParError(1);
+
+	/*TCanvas* canvas = new TCanvas(txtName,txtName); //Defines a canvas.
+	TGaxis::SetMaxDigits(3);
+	canvas->SetRightMargin(1);
+	g->Draw("AP"); //Draw graph with defined axes (A) and points (P).
+	fit1->Draw("same"); //Plots defined fit.*/
+
+	CurrentWarmSetB I; //Calculate variables within the 'Current' structure.
+	I.mean = abs(p1g*voltage+p0g);
+	I.error = pow(voltage*voltage*p1ge*p1ge + p0ge*p0ge + p1g*p1g*0.05*0.05,0.5);
+	I.voltage = voltage;
+
+	std::cout << p0g << "+/-" << p0ge << "  " << fit1->Eval(I.voltage) << "  " << I.mean << std::endl; //Prints parameters as a check. Eval function used as a concordancy check for I.mean
+	
+	return I;
+}
+
+CurrentWarmSetA ExtractIrradiatedCurrentWA(TString txtName="", TString graphTitle="", double Voltage = voltage)//Function to fit curves and extract current from fits at user given voltage.
+{
+	TGraphErrors *g = new TGraphErrors(txtName); //Sets graph parameters with errors.		
+	g->GetXaxis()->SetTitle("Voltage(V)");
+	g->GetYaxis()->SetTitle("Leakage Current (nA)");
+	g->GetYaxis()->SetTitleOffset(1.45);
+	g->SetTitle(graphTitle);
+
+	TF1* fit1 = new TF1("fit1","pol1", -100,-75); //Fits 1st order poly within range
+	g->Fit(fit1,"RN"); //R = within given range. N = Don't plot.
+	double p0g = fit1->GetParameter(0); //Assigns fit parameters.
+	double p0ge = fit1->GetParError(0);
+	double p1g = fit1->GetParameter(1);
+	double p1ge = fit1->GetParError(1);
+
+	/*TCanvas* canvas = new TCanvas(txtName,txtName); //Defines a canvas.
+	g->Draw("AP"); //Draw graph with defined axes (A) and points (P).
+	fit1->Draw("same"); //Plots defined fit.*/
+
+	CurrentWarmSetA I; //Calculate variables within the 'Current' structure.
+	I.mean = abs(p1g*voltage+p0g);
+	I.error = pow(voltage*voltage*p1ge*p1ge + p0ge*p0ge + p1g*p1g*0.05*0.05,0.5);
+	I.voltage = voltage;
+
+	std::cout << p0g << "+/-" << p0ge << "  " << fit1->Eval(I.voltage) << "  " << I.mean << std::endl; //Prints parameters as a check. Eval function used as a concordancy check for I.mean
+	
+	return I;
+}
+
+CurrentColdSetB ExtractIrradiatedCurrentCB(TString txtName="", TString graphTitle="", double Voltage = voltage)//Function to fit curves and extract current from fits at user given voltage.
+{
+	TGraphErrors *g = new TGraphErrors(txtName); //Sets graph parameters with errors.		
+	g->GetXaxis()->SetTitle("Voltage(V)");
+	g->GetYaxis()->SetTitle("Leakage Current (nA)");
+	g->GetYaxis()->SetTitleOffset(1.45);
+	g->SetTitle(graphTitle);
+
+	TF1* fit1 = new TF1("fit1","pol1", -100,-75); //Fits 1st order poly within range
+	g->Fit(fit1,"RN"); //R = within given range. N = Don't plot.
+	double p0g = fit1->GetParameter(0); //Assigns fit parameters.
+	double p0ge = fit1->GetParError(0);
+	double p1g = fit1->GetParameter(1);
+	double p1ge = fit1->GetParError(1);
+
+	/*TCanvas* canvas = new TCanvas(txtName,txtName); //Defines a canvas.
+	g->Draw("AP"); //Draw graph with defined axes (A) and points (P).
+	fit1->Draw("same"); //Plots defined fit.*/
+
+	CurrentColdSetB I; //Calculate variables within the 'Current' structure.
+	I.mean = abs(p1g*voltage+p0g);
+	I.error = pow(voltage*voltage*p1ge*p1ge + p0ge*p0ge + p1g*p1g*0.05*0.05,0.5);
+	I.voltage = voltage;
+
+	std::cout << p0g << "+/-" << p0ge << "  " << fit1->Eval(I.voltage) << "  " << I.mean << std::endl; //Prints parameters as a check. Eval function used as a concordancy check for I.mean
+	
+	return I;
+}
+
+CurrentColdSetA ExtractIrradiatedCurrentCA(TString txtName="", TString graphTitle="", double Voltage = voltage)//Function to fit curves and extract current from fits at user given voltage.
+{
+	TGraphErrors *g = new TGraphErrors(txtName); //Sets graph parameters with errors.		
+	g->GetXaxis()->SetTitle("Voltage(V)");
+	g->GetYaxis()->SetTitle("Leakage Current (nA)");
+	g->GetYaxis()->SetTitleOffset(1.45);
+	g->SetTitle(graphTitle);
+
+	TF1* fit1 = new TF1("fit1","pol1", -100,-75); //Fits 1st order poly within range
+	g->Fit(fit1,"RN"); //R = within given range. N = Don't plot.
+	double p0g = fit1->GetParameter(0); //Assigns fit parameters.
+	double p0ge = fit1->GetParError(0);
+	double p1g = fit1->GetParameter(1);
+	double p1ge = fit1->GetParError(1);
+
+	/*TCanvas* canvas = new TCanvas(txtName,txtName); //Defines a canvas.
+	g->Draw("AP"); //Draw graph with defined axes (A) and points (P).
+	fit1->Draw("same"); //Plots defined fit.*/
+
+	CurrentColdSetA I; //Calculate variables within the 'Current' structure.
+	I.mean = abs(p1g*voltage+p0g);
+	I.error = pow(voltage*voltage*p1ge*p1ge + p0ge*p0ge + p1g*p1g*0.05*0.05,0.5);
+	I.voltage = voltage;
+
+	std::cout << p0g << "+/-" << p0ge << "  " << fit1->Eval(I.voltage) << "  " << I.mean << std::endl; //Prints parameters as a check. Eval function used as a concordancy check for I.mean
+	
+	return I;
+}
+
+void PlotDiode(std::vector<CurrentWarmSetB> Currents)
+{
+	std::vector<double> x,y,ex,ey; //defines vector with variables x, y, ex, ey.
+		for(unsigned int i(0); i<Currents.size(); i++) //Scans 'Currents' for variables  
+		{
+			x.push_back(Currents[i].fluence); //Puts variable x into vector.
+			ex.push_back(Currents[i].fluence_error); //Same but errors.
+		
+			y.push_back(Currents[i].mean); 
+			ey.push_back(Currents[i].error);
+
+		}
+
+	TF1* fit1 = new TF1("fit1","[0]*x", 0,5.5e12);
+	fit1->SetParameter(0,5e-11);
+	TCanvas *Fluence = new TCanvas("FluenceWB","FluenceWB",600,700);
+	TGraphErrors *g5 = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
+		g5->SetMarkerColor(kBlack);
+		g5->SetMarkerStyle(20);
+		g5->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		g5->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		g5->SetTitle("");
+		g5->Fit(fit1,"RN");
+		fit1->SetLineColor(kBlack);
+		
+		TGaxis::SetMaxDigits(3);
+		
+		g5->Draw("AP");
+		fit1->Draw("same");
+
+	double l = 0.265; //p cm^2
+	double w = 0.03; //cm
+
+	double theta = fit1->GetParameter(0); //nA cm^2 
+	double alpha = pow(10,-9)*theta/(l*l*w); //A cm^-1
+
+	double etheta = fit1->GetParError(0);
+	double ealpha = pow(10,-9)*etheta/(l*l*w);
+
+	double alphan = 3.99e-17; //A cm^-1
+	double ealphan = 0.03e-17; //A cm^-1
+
+	double k = alpha/alphan;
+	double ek = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
+
+	//std::cout << "alpha (warm set B) = " << alpha << " +/- " << ealpha << std::endl;
+	std::cout << "hardness factor (warm set B) = " << k << " +/- " << ek << std::endl; 		
+}
+
+void PlotDiode(std::vector<CurrentWarmSetA> Currents)
+{
+	std::vector<double> x,y,ex,ey; //defines vector with variables x, y, ex, ey.
+		for(unsigned int i(0); i<Currents.size(); i++) //Scans 'Currents' for variables  
+		{
+			x.push_back(Currents[i].fluence); //Puts variable x into vector.
+			ex.push_back(Currents[i].fluence_error); //Same but errors.
+		
+			y.push_back(Currents[i].mean); 
+			ey.push_back(Currents[i].error);
+
+		}
+
+	TF1* fit1 = new TF1("fit1","[0]*x", 0,5.5e12);
+	fit1->SetParameter(0,5e-11);
+	TCanvas *Fluence = new TCanvas("FluenceWA","FluenceWA",600,700);
+	TGraphErrors *g5 = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
+		g5->SetMarkerColor(kBlack);
+		g5->SetMarkerStyle(20);
+		g5->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		g5->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		g5->SetTitle("");
+		g5->Fit(fit1,"RN");
+		fit1->SetLineColor(kBlack);
+		
+		TGaxis::SetMaxDigits(2);
+
+		g5->Draw("AP");
+		fit1->Draw("same");
+
+	double l = 0.265; //p cm^2
+	double w = 0.03; //cm
+
+	double theta = fit1->GetParameter(0); //nA cm^2 
+	double alpha = pow(10,-9)*theta/(l*l*w); //A cm^-1
+
+	double etheta = fit1->GetParError(0);
+	double ealpha = pow(10,-9)*etheta/(l*l*w);
+
+	double alphan = 3.99e-17; //A cm^-1
+	double ealphan = 0.03e-17; //A cm^-1
+
+	double k = alpha/alphan;
+	double ek = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
+
+	//std::cout << "alpha (warm set A) = " << alpha << " +/- " << ealpha << std::endl;
+	std::cout << "hardness factor (warm set A) = " << k << " +/- " << ek << std::endl; 		
+}
+
+void PlotDiode(std::vector<CurrentColdSetB> Currents)
+{
+	std::vector<double> x,y,ex,ey; //defines vector with variables x, y, ex, ey.
+		for(unsigned int i(0); i<Currents.size(); i++) //Scans 'Currents' for variables  
+		{
+			x.push_back(Currents[i].fluence); //Puts variable x into vector.
+			ex.push_back(Currents[i].fluence_error); //Same but errors.
+		
+			y.push_back(Currents[i].mean); 
+			ey.push_back(Currents[i].error);
+
+		}
+
+	TF1* fit1 = new TF1("fit1","[0]*x", 0,5.5e12);
+	fit1->SetParameter(0,5e-11);
+	TCanvas *Fluence = new TCanvas("FluenceCB","FluenceCB",600,700);
+	TGraphErrors *g5 = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
+		g5->SetMarkerColor(kBlack);
+		g5->SetMarkerStyle(20);
+		g5->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		g5->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		g5->SetTitle("");
+		g5->Fit(fit1,"RN");
+		fit1->SetLineColor(kBlack);
+		
+		TGaxis::SetMaxDigits(3);
+
+		g5->Draw("AP");
+		fit1->Draw("same");
+
+	double l = 0.265; //p cm^2
+	double w = 0.03; //cm
+
+	double theta = fit1->GetParameter(0); //nA cm^2 
+	double alpha = pow(10,-9)*theta/(l*l*w); //A cm^-1
+
+	double etheta = fit1->GetParError(0);
+	double ealpha = pow(10,-9)*etheta/(l*l*w);
+
+	double alphan = 3.99e-17; //A cm^-1
+	double ealphan = 0.03e-17; //A cm^-1
+
+	double k = alpha/alphan;
+	double ek = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
+
+	//std::cout << "alpha (cold set B) = " << alpha << " +/- " << ealpha << std::endl;
+	std::cout << "hardness factor (cold set B) = " << k << " +/- " << ek << std::endl; 		
+}
+
+void PlotDiode(std::vector<CurrentColdSetA> Currents)
+{
+	std::vector<double> x,y,ex,ey; //defines vector with variables x, y, ex, ey.
+		for(unsigned int i(0); i<Currents.size(); i++) //Scans 'Currents' for variables  
+		{
+			x.push_back(Currents[i].fluence); //Puts variable x into vector.
+			ex.push_back(Currents[i].fluence_error); //Same but errors.
+		
+			y.push_back(Currents[i].mean); 
+			ey.push_back(Currents[i].error);
+
+		}
+
+	TF1* fit1 = new TF1("fit1","[0]*x", 0,5.5e12);
+	fit1->SetParameter(0,5e-11);
+	TCanvas *Fluence = new TCanvas("FluenceCA","FluenceCA",600,700);
+	TGraphErrors *g5 = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
+		g5->SetMarkerColor(kBlack);
+		g5->SetMarkerStyle(20);
+		g5->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		g5->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		g5->SetTitle("");
+		g5->Fit(fit1,"RN");
+		fit1->SetLineColor(kBlack);
+		
+		TGaxis::SetMaxDigits(2);
+
+		g5->Draw("AP");
+		fit1->Draw("same");
+
+	double l = 0.265; //p cm^2
+	double w = 0.03; //cm
+
+	double theta = fit1->GetParameter(0); //nA cm^2 
+	double alpha = pow(10,-9)*theta/(l*l*w); //A cm^-1
+
+	double etheta = fit1->GetParError(0);
+	double ealpha = pow(10,-9)*etheta/(l*l*w);
+
+	double alphan = 3.99e-17; //A cm^-1
+	double ealphan = 0.03e-17; //A cm^-1
+
+	double k = alpha/alphan;
+	double ek = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
+
+	//std::cout << "alpha (cold set A) = " << alpha << " +/- " << ealpha << std::endl;
+	std::cout << "hardness factor (cold set A) = " << k << " +/- " << ek << std::endl; 		
+}
+
+void EvaluateDiodes() //Function to define relevant files and corresponging parameters.
+{
+	std::cout << "=================================================================" << std::endl;
+	std::vector<CurrentWarmSetB> IsWB;
+	std::vector<CurrentWarmSetA> IsWA;
+	std::vector<CurrentColdSetB> IsCB;
+	std::vector<CurrentColdSetA> IsCA;	
+
+	double c = 112.67;
+	double error_c = 0.55238 + 5.358;
+	double sys_fluence_error = 27./170.; //15.9%
+
+	//Warm Set B
+
+	CurrentWarmSetB Ia = ExtractIrradiatedCurrentWB("Diode26_IV_irradiated_0603.txt","Diode 26 irradiated"); 
+	Double_t Inon = ExtractNonIrradiatedCurrent_Inon("Diode26_IV_2602.txt","Diode 26 non-irradiated");
+	Double_t Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode26_IV_2602.txt","Diode 26 non-irradiated");	
+	Ia.mean = Ia.mean - Inon;
+	Ia.error = pow(Ia.error*Ia.error + Inonerror*Inonerror,0.5);
+	Ia.fluence = 6.52E+13/c;
+	Ia.fluence_error = pow(pow(4.30E+12/c,2.)+pow((Ia.fluence*error_c)/(c*c),2.) + pow(Ia.fluence*sys_fluence_error,2.),0.5);
+	IsWB.push_back(Ia);
+
+	CurrentWarmSetB Ib = ExtractIrradiatedCurrentWB("Diode28_IV_irradiated_0603.txt","Diode 28 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode28_IV_2602.txt","Diode 28 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode28_IV_2602.txt","Diode 28 non-irradiated");	
+	Ib.mean = Ib.mean - Inon;
+	Ib.error = pow(Ib.error*Ib.error + Inonerror*Inonerror,0.5);
+	Ib.fluence = 1.87E+14/c;
+	Ib.fluence_error = pow(pow(5.00E+12/c,2.)+pow((Ib.fluence*error_c)/(c*c),2.) + pow(Ib.fluence*sys_fluence_error,2.),0.5);
+	IsWB.push_back(Ib); 
+
+	CurrentWarmSetB Ic = ExtractIrradiatedCurrentWB("Diode30_IV_irradiated_0603.txt","Diode 30 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode30_IV_2602.txt","Diode 30 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode30_IV_2602.txt","Diode 30 non-irradiated");	
+	Ic.mean = Ic.mean - Inon;
+	Ic.error = pow(Ic.error*Ic.error + Inonerror*Inonerror,0.5);
+	Ic.fluence = 2.92e14/c;
+	Ic.fluence_error = pow(pow(0.09e14/c,2.)+pow((Ic.fluence*error_c)/(c*c),2.) + pow(Ic.fluence*sys_fluence_error,2.),0.5);
+	IsWB.push_back(Ic); 
+
+	CurrentWarmSetB Id = ExtractIrradiatedCurrentWB("Diode32_IV_irradiated_0603.txt","Diode 32 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode32_IV_2602.txt","Diode 32 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode32_IV_2602.txt","Diode 32 non-irradiated");	
+	Id.mean = Id.mean - Inon;
+	Id.error = pow(Id.error*Id.error + Inonerror*Inonerror,0.5);
+	Id.fluence = 3.61e14/c;
+	Id.fluence_error = pow(pow(0.11e14/c,2.)+pow((Id.fluence*error_c)/(c*c),2.) + pow(Id.fluence*sys_fluence_error,2.),0.5);
+	IsWB.push_back(Id); 
+
+	CurrentWarmSetB Ie = ExtractIrradiatedCurrentWB("Diode34_IV_irradiated_0603.txt","Diode 34 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode34_IV_2602.txt","Diode 34 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode34_IV_2602.txt","Diode 34 non-irradiated");	
+	Ie.mean = Ie.mean - Inon;
+	Ie.error = pow(Ie.error*Ie.error + Inonerror*Inonerror,0.5);
+	Ie.fluence = 5.34e14/c;
+	Ie.fluence_error = pow(pow(0.12e14/c,2.)+pow((Ie.fluence*error_c)/(c*c),2.) + pow(Ie.fluence*sys_fluence_error,2.),0.5);
+	IsWB.push_back(Ie);
+
+	CurrentWarmSetB If = ExtractIrradiatedCurrentWB("Diode36_IV_irradiated_0603.txt","Diode 36 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode36_IV_2602.txt","Diode 36 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode36_IV_2602.txt","Diode 36 non-irradiated");	
+	If.mean = If.mean - Inon;
+	If.error = pow(If.error*If.error + Inonerror*Inonerror,0.5);
+	If.fluence = 3.82e14/c;
+	If.fluence_error = pow(pow(0.13e14/c,2.)+pow((If.fluence*error_c)/(c*c),2.) + pow(If.fluence*sys_fluence_error,2.),0.5);
+	IsWB.push_back(If);   
+	
+	//Warm Set A
+
+	CurrentWarmSetA Ig = ExtractIrradiatedCurrentWA("Diode25_IV_irradiated_0603.txt","Diode 25 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode25_IV_2602.txt","Diode 25 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode25_IV_2602.txt","Diode 25 non-irradiated");	
+	Ig.mean = Ig.mean - Inon;
+	Ig.error = pow(Ig.error*Ig.error + Inonerror*Inonerror,0.5);
+	Ig.fluence = 6.52E+13/c;
+	Ig.fluence_error = pow(pow(4.30E+12/c,2.)+pow((Ig.fluence*error_c)/(c*c),2.) + pow(Ig.fluence*sys_fluence_error,2.),0.5);
+	IsWA.push_back(Ig);
+
+	CurrentWarmSetA Ih = ExtractIrradiatedCurrentWA("Diode27_IV_irradiated_0603.txt","Diode 27 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode27_IV_2602.txt","Diode 27 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode27_IV_2602.txt","Diode 27 non-irradiated");	
+	Ih.mean = Ih.mean - Inon;
+	Ih.error = pow(Ih.error*Ih.error + Inonerror*Inonerror,0.5);
+	Ih.fluence = 1.87E+14/c;
+	Ih.fluence_error = pow(pow(5.00E+12/c,2.)+pow((Ih.fluence*error_c)/(c*c),2.) + pow(Ih.fluence*sys_fluence_error,2.),0.5);
+	IsWA.push_back(Ih); 
+
+	CurrentWarmSetA Ii = ExtractIrradiatedCurrentWA("Diode29_IV_irradiated_0603.txt","Diode 29 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode29_IV_2602.txt","Diode 29 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode29_IV_2602.txt","Diode 29 non-irradiated");	
+	Ii.mean = Ii.mean - Inon;
+	Ii.error = pow(Ii.error*Ii.error + Inonerror*Inonerror,0.5);
+	Ii.fluence = 2.92e14/c;
+	Ii.fluence_error = pow(pow(0.09e14/c,2.)+pow((Ii.fluence*error_c)/(c*c),2.) + pow(Ii.fluence*sys_fluence_error,2.),0.5);
+	IsWA.push_back(Ii); 
+
+	CurrentWarmSetA Ij = ExtractIrradiatedCurrentWA("Diode31_IV_irradiated_0603.txt","Diode 31 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode31_IV_2602.txt","Diode 31 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode31_IV_2602.txt","Diode 31 non-irradiated");	
+	Ij.mean = Ij.mean - Inon;
+	Ij.error = pow(Ij.error*Ij.error + Inonerror*Inonerror,0.5);
+	Ij.fluence = 3.61e14/c;
+	Ij.fluence_error = pow(pow(0.11e14/c,2.)+pow((Ij.fluence*error_c)/(c*c),2.) + pow(Ij.fluence*sys_fluence_error,2.),0.5);
+	IsWA.push_back(Ij); 
+
+	CurrentWarmSetA Ik = ExtractIrradiatedCurrentWA("Diode33_IV_irradiated_0603.txt","Diode 33 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode33_IV_2602.txt","Diode 34 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode33_IV_2602.txt","Diode 33 non-irradiated");	
+	Ik.mean = Ik.mean - Inon;
+	Ik.error = pow(Ik.error*Ik.error + Inonerror*Inonerror,0.5);
+	Ik.fluence = 5.34e14/c;
+	Ik.fluence_error = pow(pow(0.12e14/c,2.)+pow((Ik.fluence*error_c)/(c*c),2.) + pow(Ik.fluence*sys_fluence_error,2.),0.5);
+	IsWA.push_back(Ik);
+
+	CurrentWarmSetA Il = ExtractIrradiatedCurrentWA("Diode35_IV_irradiated_0603.txt","Diode 35 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode35_IV_2602.txt","Diode 35 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode35_IV_2602.txt","Diode 35 non-irradiated");	
+	Il.mean = Il.mean - Inon;
+	Il.error = pow(Il.error*Il.error + Inonerror*Inonerror,0.5);
+	Il.fluence = 3.82e14/c;
+	Il.fluence_error = pow(pow(0.13e14/c,2.)+pow((Il.fluence*error_c)/(c*c),2.) + pow(Il.fluence*sys_fluence_error,2.),0.5);
+	IsWA.push_back(Il);
+
+	//Cold Set B
+
+	//Omitted stupid high fluence
+	CurrentColdSetB Im = ExtractIrradiatedCurrentCB("Diode38_IV_irradiated_0603.txt","Diode 38 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode38_IV_2602.txt","Diode 38 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode38_IV_2602.txt","Diode 38 non-irradiated");	
+	Im.mean = Im.mean - Inon;
+	Im.error = pow(Im.error*Im.error + Inonerror*Inonerror,0.5);
+	Im.fluence = 1.58e15/c;
+	Im.fluence_error = pow(pow(0.02e15/c,2.)+pow((Im.fluence*error_c)/(c*c),2.) + pow(Im.fluence*sys_fluence_error,2.),0.5);
+	IsCB.push_back(Im);
+
+	CurrentColdSetB In = ExtractIrradiatedCurrentCB("Diode40_IV_irradiated_0603.txt","Diode 40 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode40_IV_2802.txt","Diode 40 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode40_IV_2802.txt","Diode 40 non-irradiated");	
+	In.mean = In.mean - Inon;
+	In.error = pow(In.error*Ih.error + Inonerror*Inonerror,0.5);
+	In.fluence = 2.81E+14/c;
+	In.fluence_error = pow(pow(0.08E+14/c,2.)+pow((In.fluence*error_c)/(c*c),2.) + pow(In.fluence*sys_fluence_error,2.),0.5);
+	IsCB.push_back(In); 
+
+	CurrentColdSetB Io = ExtractIrradiatedCurrentCB("Diode42_IV_irradiated_0603.txt","Diode 42 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode42_IV_2802.txt","Diode 42 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode42_IV_2802.txt","Diode 42 non-irradiated");	
+	Io.mean = Io.mean - Inon;
+	Io.error = pow(Io.error*Io.error + Inonerror*Inonerror,0.5);
+	Io.fluence = 7.51e13/c;
+	Io.fluence_error = pow(pow(0.41e13/c,2.)+pow((Io.fluence*error_c)/(c*c),2.) + pow(Io.fluence*sys_fluence_error,2.),0.5);
+	IsCB.push_back(Io); 
+
+	CurrentColdSetB Ip = ExtractIrradiatedCurrentCB("Diode44_IV_irradiated_0603.txt","Diode 44 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode44_IV_2802.txt","Diode 44 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode44_IV_2802.txt","Diode 44 non-irradiated");	
+	Ip.mean = Ip.mean - Inon;
+	Ip.error = pow(Ip.error*Ip.error + Inonerror*Inonerror,0.5);
+	Ip.fluence = 1.13e14/c;
+	Ip.fluence_error = pow(pow(0.04e14/c,2.)+pow((Ip.fluence*error_c)/(c*c),2.) + pow(Ip.fluence*sys_fluence_error,2.),0.5);
+	IsCB.push_back(Ip); 
+
+	CurrentColdSetB Iq = ExtractIrradiatedCurrentCB("Diode46_IV_irradiated_0603.txt","Diode 46 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode46_IV_2802.txt","Diode 46 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode46_IV_2802.txt","Diode 46 non-irradiated");	
+	Iq.mean = Iq.mean - Inon;
+	Iq.error = pow(Iq.error*Iq.error + Inonerror*Inonerror,0.5);
+	Iq.fluence = 4.88e13/c;
+	Iq.fluence_error = pow(pow(0.36e13/c,2.)+pow((Iq.fluence*error_c)/(c*c),2.) + pow(Iq.fluence*sys_fluence_error,2.),0.5);
+	IsCB.push_back(Iq);
+
+	CurrentColdSetB Ir = ExtractIrradiatedCurrentCB("Diode48_IV_irradiated_0603.txt","Diode 48 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode48_IV_2802.txt","Diode 48 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode48_IV_2802.txt","Diode 48 non-irradiated");	
+	Ir.mean = Ir.mean - Inon;
+	Ir.error = pow(Ir.error*Ir.error + Inonerror*Inonerror,0.5);
+	Ir.fluence = 1.76e13/c;
+	Ir.fluence_error = pow(pow(0.27e13/c,2.)+pow((Ir.fluence*error_c)/(c*c),2.) + pow(Ir.fluence*sys_fluence_error,2.),0.5);
+	IsCB.push_back(Ir);
+
+	//Cold Set A	
+	
+	//Omitted stupid high fluence
+	CurrentColdSetA IS = ExtractIrradiatedCurrentCA("Diode37_IV_irradiated_0603.txt","Diode 37 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode37_IV_2602.txt","Diode 37 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode37_IV_2602.txt","Diode 37 non-irradiated");	
+	IS.mean = IS.mean - Inon;
+	IS.error = pow(IS.error*IS.error + Inonerror*Inonerror,0.5);
+	IS.fluence = 1.58e15/c;
+	IS.fluence_error = pow(pow(0.02e15/c,2.)+pow((IS.fluence*error_c)/(c*c),2.) + pow(IS.fluence*sys_fluence_error,2.),0.5);
+	IsCA.push_back(IS);
+
+	CurrentColdSetA It = ExtractIrradiatedCurrentCA("Diode39_IV_irradiated_0603.txt","Diode 39 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode39_IV_2602.txt","Diode 39 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode39_IV_2602.txt","Diode 39 non-irradiated");	
+	It.mean = It.mean - Inon;
+	It.error = pow(It.error*It.error + Inonerror*Inonerror,0.5);
+	It.fluence = 2.81E+14/c;
+	It.fluence_error = pow(pow(0.08E+14/c,2.)+pow((It.fluence*error_c)/(c*c),2.) + pow(It.fluence*sys_fluence_error,2.),0.5);
+	IsCA.push_back(It); 
+
+	CurrentColdSetA Iu = ExtractIrradiatedCurrentCA("Diode41_IV_irradiated_0603.txt","Diode 41 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode41_IV_2802.txt","Diode 41 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode41_IV_2802.txt","Diode 41 non-irradiated");	
+	Iu.mean = Iu.mean - Inon;
+	Iu.error = pow(Iu.error*Iu.error + Inonerror*Inonerror,0.5);
+	Iu.fluence = 7.51e13/c;
+	Iu.fluence_error = pow(pow(0.41e13/c,2.)+pow((Iu.fluence*error_c)/(c*c),2.) + pow(Iu.fluence*sys_fluence_error,2.),0.5);
+	IsCA.push_back(Iu); 
+
+	CurrentColdSetA Iv = ExtractIrradiatedCurrentCA("Diode43_IV_irradiated_0603.txt","Diode 43 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode43_IV_2802.txt","Diode 43 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode43_IV_2802.txt","Diode 43 non-irradiated");	
+	Iv.mean = Iv.mean - Inon;
+	Iv.error = pow(Iv.error*Iv.error + Inonerror*Inonerror,0.5);
+	Iv.fluence = 1.13e14/c;
+	Iv.fluence_error = pow(pow(0.04e14/c,2.)+pow((Iv.fluence*error_c)/(c*c),2.) + pow(Iv.fluence*sys_fluence_error,2.),0.5);
+	IsCA.push_back(Iv); 
+
+	CurrentColdSetA Iw = ExtractIrradiatedCurrentCA("Diode45_IV_irradiated_0603.txt","Diode 45 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode45_IV_2802.txt","Diode 41 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode45_IV_2802.txt","Diode 45 non-irradiated");	
+	Iw.mean = Iw.mean - Inon;
+	Iw.error = pow(Iw.error*Iw.error + Inonerror*Inonerror,0.5);
+	Iw.fluence = 4.88e13/c;
+	Iw.fluence_error = pow(pow(0.36e13/c,2.)+pow((Iw.fluence*error_c)/(c*c),2.) + pow(Iw.fluence*sys_fluence_error,2.),0.5);
+	IsCA.push_back(Iw);
+
+	CurrentColdSetA Ix = ExtractIrradiatedCurrentCA("Diode47_IV_irradiated_0603.txt","Diode 47 irradiated"); 
+	Inon = ExtractNonIrradiatedCurrent_Inon("Diode47_IV_2802.txt","Diode 47 non-irradiated");
+	Inonerror = ExtractNonIrradiatedCurrent_Inonerror("Diode47_IV_2802.txt","Diode 47 non-irradiated");	
+	Ix.mean = Ix.mean - Inon;
+	Ix.error = pow(Ix.error*Ix.error + Inonerror*Inonerror,0.5);
+	Ix.fluence = 1.76e13/c;
+	Ix.fluence_error = pow(pow(0.27e13/c,2.)+pow((Ix.fluence*error_c)/(c*c),2.) + pow(Ix.fluence*sys_fluence_error,2.),0.5);
+	IsCA.push_back(Ix);
+		
+	std::cout << "===============================================================================================" << std::endl;
+	std::cout << "|" << "Delta I (nA) \t     Delta I Error (nA) \t    Fluence (pcm^-2) \tFluence Error (pcm^-2)" << "|" << std::endl;
+	std::cout << "|" << Ia.mean << "\t\t\t" << Ia.error << "\t\t\t" << Ia.fluence << "\t\t   " << Ia.fluence_error << "|" << std::endl; 
+	std::cout << "|" << Ib.mean << "\t\t\t" << Ib.error << "\t\t\t" << Ib.fluence << "\t\t   " << Ib.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ic.mean << "\t\t\t" << Ic.error << "\t\t\t" << Ic.fluence << "\t\t   " << Ic.fluence_error << "|" << std::endl;
+	std::cout << "|" << Id.mean << "\t\t\t" << Id.error << "\t\t\t" << Id.fluence << "\t\t   " << Id.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ie.mean << "\t\t\t" << Ie.error << "\t\t\t" << Ie.fluence << "\t\t   " << Ie.fluence_error << "|" << std::endl;
+	std::cout << "|" << If.mean << "\t\t\t" << If.error << "\t\t\t" << If.fluence << "\t\t   " << If.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ig.mean << "\t\t\t" << Ig.error << "\t\t\t" << Ig.fluence << "\t\t   " << Ig.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ih.mean << "\t\t\t" << Ih.error << "\t\t\t" << Ih.fluence << "\t\t   " << Ih.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ii.mean << "\t\t\t" << Ii.error << "\t\t\t" << Ii.fluence << "\t\t   " << Ii.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ij.mean << "\t\t\t" << Ij.error << "\t\t\t" << Ij.fluence << "\t\t   " << Ij.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ik.mean << "\t\t\t" << Ik.error << "\t\t\t" << Ik.fluence << "\t\t   " << Ik.fluence_error << "|" << std::endl;
+	std::cout << "|" << Il.mean << "\t\t\t" << Il.error << "\t\t\t" << Il.fluence << "\t\t   " << Il.fluence_error << "|" << std::endl;
+	std::cout << "|->" << Im.mean << "\t\t\t" << Im.error << "\t\t\t" << Im.fluence << "\t\t   " << Im.fluence_error << "|" << std::endl;
+	std::cout << "|" << In.mean << "\t\t\t" << In.error << "\t\t\t" << In.fluence << "\t\t   " << In.fluence_error << "|" << std::endl;
+	std::cout << "|" << Io.mean << "\t\t\t" << Io.error << "\t\t\t" << Io.fluence << "\t\t   " << Io.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ip.mean << "\t\t\t" << Ip.error << "\t\t\t" << Ip.fluence << "\t\t   " << Ip.fluence_error << "|" << std::endl;
+	std::cout << "|" << Iq.mean << "\t\t\t" << Iq.error << "\t\t\t" << Iq.fluence << "\t\t   " << Iq.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ir.mean << "\t\t\t" << Ir.error << "\t\t\t" << Ir.fluence << "\t\t   " << Ir.fluence_error << "|" << std::endl;
+	std::cout << "|->" << IS.mean << "\t\t\t" << IS.error << "\t\t\t" << IS.fluence << "\t\t   " << IS.fluence_error << "|" << std::endl;
+	std::cout << "|" << It.mean << "\t\t\t" << It.error << "\t\t\t" << It.fluence << "\t\t   " << It.fluence_error << "|" << std::endl;
+	std::cout << "|" << Iu.mean << "\t\t\t" << Iu.error << "\t\t\t" << Iu.fluence << "\t\t   " << Iu.fluence_error << "|" << std::endl;
+	std::cout << "|" << Iv.mean << "\t\t\t" << Iv.error << "\t\t\t" << Iv.fluence << "\t\t   " << Iv.fluence_error << "|" << std::endl;
+	std::cout << "|" << Iw.mean << "\t\t\t" << Iw.error << "\t\t\t" << Iw.fluence << "\t\t   " << Iw.fluence_error << "|" << std::endl;
+	std::cout << "|" << Ix.mean << "\t\t\t" << Ix.error << "\t\t\t" << Ix.fluence << "\t\t   " << Ix.fluence_error << "|" << std::endl;
+	std::cout << "===============================================================================================" << std::endl;
+
+	PlotDiode(IsWB);
+	PlotDiode(IsWA);
+	PlotDiode(IsCB);
+	PlotDiode(IsCA);
+
+	//Combined data sets
+	
+	const Int_t nW = 6;
+	const Int_t nC = 5;
+	const Int_t i = 1;	
+	
+	//Warm Set B
+	Double_t xWB[nW] = {Ia.fluence, Ib.fluence, Ic.fluence, Id.fluence, Ie.fluence, If.fluence};
+	Double_t yWB[nW] = {Ia.mean, Ib.mean, Ic.mean, Id.mean, Ie.mean, If.mean};
+	Double_t exWB[nW] = {Ia.fluence_error, Ib.fluence_error, Ic.fluence_error, Id.fluence_error, Ie.fluence_error, If.fluence_error};
+	Double_t eyWB[nW] = {Ia.error, Ib.error, Ic.error, Id.error, Ie.error, If.error};
+
+	//Warm Set A
+	Double_t xWA[nW] = {Ig.fluence, Ih.fluence, Ii.fluence, Ij.fluence, Ik.fluence, Il.fluence};
+	Double_t yWA[nW] = {Ig.mean, Ih.mean, Ii.mean, Ij.mean, Ik.mean, Il.mean};
+	Double_t exWA[nW] = {Ig.fluence_error, Ih.fluence_error, Ii.fluence_error, Ij.fluence_error, Ik.fluence_error, Il.fluence_error};
+	Double_t eyWA[nW] = {Ig.error, Ih.error, Ii.error, Ij.error, Ik.error, Il.error};
+
+	//Cold Set B
+	Double_t xCB[nC] = {In.fluence, Io.fluence, Ip.fluence, Iq.fluence, Ir.fluence};
+	Double_t yCB[nC] = {In.mean, Io.mean, Ip.mean, Iq.mean, Ir.mean};
+	Double_t exCB[nC] = {In.fluence_error, Io.fluence_error, Ip.fluence_error, Iq.fluence_error, Ir.fluence_error};
+	Double_t eyCB[nC] = {In.error, Io.error, Ip.error, Iq.error, Ir.error};
+	
+	//Cold Set A
+	Double_t xCA[nC] = {It.fluence, Iu.fluence, Iv.fluence, Iw.fluence, Ix.fluence};
+	Double_t yCA[nC] = {It.mean, Iu.mean, Iv.mean, Iw.mean, Ix.mean};
+	Double_t exCA[nC] = {It.fluence_error, Iu.fluence_error, Iv.fluence_error, Iw.fluence_error, Ix.fluence_error};
+	Double_t eyCA[nC] = {It.error, Iu.error, Iv.error, Iw.error, Ix.error};
+	
+	//KIT
+	Double_t KITx[i] = {5.0e12};//,5.0e13,1.5e14,5.0e14};
+	Double_t KITy[i] = {1522.04};//,10850.1,24996.0,60680.1};
+	Double_t eKITy[i] = {69.5279};//,511.615,1125.55,2718.21};
+	Double_t eKITx[i] = {6.7e11};//,6.7e12,2.01e13,6.7e13};
+	
+	TGraphErrors *WB = new TGraphErrors(nW,xWB,yWB,exWB,eyWB);
+	TGraphErrors *WA = new TGraphErrors(nW,xWA,yWA,exWA,eyWA);
+	TGraphErrors *CB = new TGraphErrors(nC,xCB,yCB,exCB,eyCB);
+	TGraphErrors *CA = new TGraphErrors(nC,xCA,yCA,exCA,eyCA);
+	TGraphErrors *kit = new TGraphErrors(i,KITx,KITy,eKITx,eKITy);
+		
+		WB->SetMarkerStyle(20);
+		WA->SetMarkerStyle(20);
+		CB->SetMarkerStyle(24);
+		CA->SetMarkerStyle(24);
+		kit->SetMarkerStyle(21);
+
+		WB->SetMarkerSize(1.5);
+		WA->SetMarkerSize(1.5);
+		CB->SetMarkerSize(1.5);
+		CA->SetMarkerSize(1.5);
+		kit->SetMarkerSize(1.5);
+
+	TF1* fitc = new TF1("fitc","[0]*x", 0,5.5e12);
+		fitc->SetParameter(0,5e-11);
+	TF1* fitw = new TF1("fitw","[0]*x", 0,5.5e12);
+		fitw->SetParameter(0,5e-11);
+	TF1* fitall = new TF1("fitall","[0]*x", 0,5.5e12);
+		fitall->SetParameter(0,5e-11);
+		
+		fitc->SetLineColor(kBlack);
+		fitw->SetLineColor(kBlack);
+		fitall->SetLineColor(kBlack);
+
+		fitc->SetLineStyle(3);
+		fitw->SetLineStyle(7);
+		fitall->SetLineStyle(1);		
+		
+	TMultiGraph *warm = new TMultiGraph();
+		warm->Add(WB,"p");
+		warm->Add(WA,"p");
+		warm->Fit(fitw,"RN");
+
+	TMultiGraph *cold = new TMultiGraph();
+		cold->Add(CB,"p");
+		cold->Add(CA,"p");
+		cold->Fit(fitc,"RN");
+	
+	TMultiGraph *all = new TMultiGraph();
+		all->Add(WB,"p");
+		all->Add(WA,"p");
+		all->Add(CB,"p");
+		all->Add(CA,"p");
+		all->Fit(fitall,"RN");
+
+	TMultiGraph *allkit = new TMultiGraph();
+		allkit->Add(WB,"p");
+		allkit->Add(WA,"p");
+		allkit->Add(CB,"p");
+		allkit->Add(CA,"p");
+		allkit->Add(kit,"p");
+	
+	TF1* fit = new TF1("fit","[0]*x", 0,5.5e12);
+		fit->SetParameter(0,5e-11);
+		
+	TCanvas *combined_warm = new TCanvas("combined_warm","combined_warm",600,700);
+		TGaxis::SetMaxDigits(2);
+		warm->Draw("AP"); 
+		warm->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		warm->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		warm->SetTitle("");
+		fitw->Draw("same");
+		
+		TLegend *legendwarm = new TLegend(0.17,0.7,0.45,0.85);
+   		legendwarm->AddEntry(WA,"Room Temperature Set A","p");
+   		legendwarm->AddEntry(WB,"Room Temperature Set B","p");
+   		legendwarm->Draw();
+		combined_warm->SetRightMargin(1);
+	
+	TCanvas *combined_cold = new TCanvas("combined_cold","combined_cold",600,700);
+		TGaxis::SetMaxDigits(2);
+		cold->Draw("AP"); 
+		cold->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		cold->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		cold->SetTitle("");
+		fitc->Draw("same");
+		combined_cold->SetRightMargin(1);
+
+		TLegend *legendcold = new TLegend(0.17,0.75,0.35,0.85);
+   		legendcold->AddEntry(CA,"-27#circC Set A","p");
+   		legendcold->AddEntry(CB,"-27#circC Set B","p");
+   		legendcold->Draw();
+
+	TCanvas *combined_all = new TCanvas("combined_all","combined_all",600,700);
+		TGaxis::SetMaxDigits(2);
+		all->Draw("AP"); 
+		all->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		all->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		all->SetTitle("");
+		fitall->Draw("same");
+		fitc->Draw("same");
+		fitw->Draw("same");
+		combined_all->SetRightMargin(1);
+
+		TLegend *legendall = new TLegend(0.17,0.65,0.43,0.85);
+   		legendall->AddEntry(CA,"-27#circC","p");
+		legendall->AddEntry(WA,"Room Temperature  ","p");
+		legendall->AddEntry(fitc,"Fit to -27#circC Data","l");
+		legendall->AddEntry(fitw,"Fit to Room Temperature Data","l");
+		legendall->AddEntry(fitall,"Fit to All Data","l");
+   		legendall->Draw();
+
+	/*TCanvas *combined_all_kit = new TCanvas("combined_all_kit","combined_all_kit",600,700);
+		TGaxis::SetMaxDigits(2);
+		allkit->Draw("AP"); 
+		allkit->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
+		allkit->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+		allkit->SetTitle("");
+		fitall->Draw("same");
+		combined_all_kit->SetRightMargin(1);
+
+		TLegend *legendallkit = new TLegend(0.17,0.65,0.43,0.85);
+   		legendallkit->AddEntry(CA,"-27#circC","p");
+		legendallkit->AddEntry(WA,"Room Temperature  ","p");
+		legendallkit->AddEntry(kit,"KIT","p");
+		legendallkit->Draw();*/
+
+	double l = 0.265; //p cm^2
+	double w = 0.03; //cm
+	double alphan = 3.99e-17; //A cm^-1
+	double ealphan = 0.03e-17; //A cm^-1
+
+	double thetac = fitc->GetParameter(0); //nA cm^2 
+	double alphac = pow(10,-9)*thetac/(l*l*w); //A cm^-1
+	double ethetac = fitc->GetParError(0);
+	double ealphac = pow(10,-9)*ethetac/(l*l*w);
+	double kc = alphac/alphan;
+	double ekc = pow(pow(ealphac/alphan,2)+pow((alphac*ealphan)/(alphan*alphan),2),0.5);
+
+	double thetaw = fitw->GetParameter(0); //nA cm^2 
+	double alphaw = pow(10,-9)*thetaw/(l*l*w); //A cm^-1
+	double ethetaw = fitw->GetParError(0);
+	double ealphaw = pow(10,-9)*ethetaw/(l*l*w);
+	double kw = alphaw/alphan;
+	double ekw = pow(pow(ealphaw/alphan,2)+pow((alphaw*ealphan)/(alphan*alphan),2),0.5);
+
+	double thetaall = fitall->GetParameter(0); //nA cm^2 
+	double alphaall = pow(10,-9)*thetaall/(l*l*w); //A cm^-1
+	double ethetaall = fitall->GetParError(0);
+	double ealphaall = pow(10,-9)*ethetaall/(l*l*w);
+	double kall = alphaall/alphan;
+	double ekall = pow(pow(ealphaall/alphan,2)+pow((alphaall*ealphan)/(alphan*alphan),2),0.5);
+
+	std::cout << "Cold Set Hardness Factor = " << kc << " +/- " << ekc << std::endl;
+	std::cout << "Warm Set Hardness Factor = " << kw << " +/- " << ekw << std::endl;
+	std::cout << "Overall Hardness Factor = " << kall << " +/- " << ekall << std::endl;
+	
+	std::cout << "Cold alpha = " << alphac << " +/- " << ealphac << std::endl;
+	std::cout << "Warm alpha = " << alphaw << " +/- " << ealphaw << std::endl;
+	std::cout << "overall alpha = " << alphaall << " +/- " << ealphaall << std::endl;
+
+			
+}	
+
+void MC40_Analysis()
+{	
+	rootlogonATLAS();
+	CV_Analysis();
+
+	//Uncomment next line to revert back to original max depletion voltage.
+	voltage = -91.0;
+
+	EvaluateDiodes();
+ 	std::cout << "Average unirradiated max depletion voltage = " << voltage << " V\n";
+}

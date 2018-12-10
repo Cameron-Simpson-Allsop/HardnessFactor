@@ -1,0 +1,80 @@
+//Force 0 Fit Equation: y = 1.84769e-10*x
+#include "TGraphErrors.h"
+#include "TCanvas.h"
+#include "TF1.h"
+#include "TAxis.h"
+#include "rootlogonATLAS.h"
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+
+double calcCurrent(double fluence)
+{
+  double fitSlope{1.84769e-10};
+  return fitSlope*fluence; 
+}
+
+struct dataPoints
+{
+  std::vector<double> fluence; //p/cm^2
+  std::vector<double> current; //nA
+};
+
+struct errors
+{
+  double fracFluenceError;
+  double fracCurrentError;
+};
+
+void MC40_Fit_Sim()
+{
+  
+  double fluence, efluence, current, ecurrent;
+  double sumFracFluenceError{0};
+  double sumFracCurrentError{0};
+  errors error;
+  int linecount{0};
+  ifstream MC40;
+  MC40.open("MC40_results.txt");
+  if(!MC40.good())
+    { std::cout << "Error opening file" << std::endl; }
+  else
+    while(!MC40.eof())
+      {
+	MC40 >> fluence >> efluence >> current >> ecurrent;
+	//std::cout << fluence << "\t" << efluence << "\t" << current << "\t" << ecurrent << std::endl;
+	//std::cout << "fractional fluence/current error = " << efluence/fluence << "\t" << ecurrent/current << std::endl;
+
+	sumFracFluenceError += (efluence/fluence);
+	sumFracCurrentError += (ecurrent/current);
+	++linecount;	  
+      }
+      error.fracFluenceError = sumFracFluenceError/(linecount*1.);
+      error.fracCurrentError = sumFracCurrentError/(linecount*1.);
+  std::cout << "Fractional fluence error = " << error.fracFluenceError << "\n" << "Fractional current error = " << error.fracCurrentError << std::endl;
+  dataPoints data;
+  int N{20};
+  for(int i{1}; i <= N; ++i)
+    {
+      double fluence = i*0.5e11;
+      double current = calcCurrent(fluence);
+      data.fluence.push_back(fluence);
+      data.current.push_back(current);
+      std::cout << data.fluence[i-1] << "\t" << data.current[i-1] << std::endl;      
+    }
+
+  TF1 *fit = new TF1("fit", "[0]*x", 0., 1.e12);
+  fit->SetLineColor(kRed);
+  TGraph *g = new TGraph(data.fluence.size(), &(data.fluence[0]), &(data.current[0]));
+  g->GetXaxis()->SetTitle("fluence (p/cm^{2})");
+  g->GetYaxis()->SetTitle("Change in Leakage Current (nA)");
+  g->SetTitle("");
+  g->SetMarkerStyle(20);
+  
+  TCanvas *can = new TCanvas("can","can",600,600);
+  g->Fit(fit,"RN");
+  g->Draw("AP");
+  fit->Draw("same");
+  std::cout<<fit->GetParameter(0)<<std::endl;
+}

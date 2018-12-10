@@ -5,6 +5,7 @@
 #include "TString.h"
 #include "iostream"
 #include "rootlogonATLAS.h"
+#include "fstream"
 
 //Define 'Current' structure
 struct Current{
@@ -49,6 +50,8 @@ Current Extract_Current(TString txtName, double voltage, double minFit, double m
 
 void Extract_Hardness_Factor(std::vector<Current> Data)
 {
+  ofstream outFile;
+  outFile.open("IRRAD_Hardness_Factor_Data.txt");
   //Put data from vector into a plottable format
   std::vector<double> x,y,ex,ey;
   for(unsigned int i{0}; i<Data.size(); i++)
@@ -57,15 +60,17 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
       y.push_back(Data[i].Mean_current);
       ex.push_back(Data[i].eFluence);
       ey.push_back(Data[i].eMean_current);
+      outFile << Data[i].Fluence << "\t" << Data[i].Mean_current << "\t" << Data[i].eFluence << "\t" << Data[i].eMean_current << std::endl;
     }
+  outFile.close();
   
   //Plots data
   TGraphErrors *g = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
   g->SetMarkerColor(kBlack);
   g->SetMarkerStyle(20);
   g->SetMarkerSize(3);
-  g->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
-  g->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+  g->GetXaxis()->SetTitle("#phi (pcm^{-2})");
+  g->GetYaxis()->SetTitle("| #Delta I | (-nA)");
   g->GetXaxis()->SetRangeUser(-1.e12,120.e12);
   g->GetYaxis()->SetRangeUser(-0.1e3,7e3);
   g->SetTitle("");

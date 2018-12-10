@@ -76,9 +76,15 @@ void CV_updated_error_covariance()
 
   TCanvas *c1a = new TCanvas("c1","c1",600,700);
   gr1->Draw("AP");
-  fit1->Draw("same");
-  fit2->Draw("same");
+  //fit1->Draw("same");
+  //fit2->Draw("same");
   c1a->SetRightMargin(1);
+
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextSize(0.04);
+  latex.DrawLatex(0.6,0.5,"V_{dep} = -91 #pm 5 V");
+  gPad->RedrawAxis();
   
   double cov = hmult->GetMean() - (hm->GetMean()*hc->GetMean());
   double Rho = cov/(ec*em);

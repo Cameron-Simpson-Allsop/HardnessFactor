@@ -36,8 +36,8 @@ double Extract_Max_Depletion_Voltage(TString txtName="", double min1 = 0, double
 
   //Plot vector
   TGraph *g = new TGraph(n, &v[0], &c[0]);
-  g->GetXaxis()->SetTitle("Voltage(-V)");
-  g->GetYaxis()->SetTitle("1/Capacitance^{2} (1/F^{2})");
+  g->GetXaxis()->SetTitle("V(-V)");
+  g->GetYaxis()->SetTitle("1/C^{2} (1/F^{2})");
   g->SetTitle("");
   g->SetMarkerStyle(20);
   g->SetMarkerSize(1.2);
@@ -122,6 +122,8 @@ Current Extract_Current(TString txtName, double voltage, double minFit, double m
 
 void Extract_Hardness_Factor(std::vector<Current> Data)
 {
+  ofstream outFile;
+  outFile.open("Isidre_Hardness_Factor_Data.txt");
   //Put data from vector into a plottable format
   std::vector<double> x,y,ex,ey;
   for(unsigned int i{0}; i<Data.size(); i++)
@@ -130,15 +132,16 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
       y.push_back(Data[i].Mean_current);
       ex.push_back(Data[i].eFluence);
       ey.push_back(Data[i].eMean_current);
+      outFile << Data[i].Fluence << "\t" << Data[i].Mean_current << "\t" << Data[i].eFluence << "\t" << Data[i].eMean_current << std::endl;
     }
-  
+  outFile.close();
   //Plots data
   TGraphErrors *g = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
   g->SetMarkerColor(kBlack);
   g->SetMarkerStyle(20);
   g->SetMarkerSize(3);
-  g->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
-  g->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+  g->GetXaxis()->SetTitle("#phi (pcm^{-2})");
+  g->GetYaxis()->SetTitle("| #DeltaI | (-nA)");
   g->SetTitle("");
   g->GetXaxis()->SetRangeUser(-5.e12, 100.e12);
   g->GetYaxis()->SetRangeUser(-0.5e3, 18.e3);
@@ -149,7 +152,7 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   fit->SetParameter(0,0);
   fit->SetLineColor(kBlue);
   
-  TF1* fit1 = new TF1("fit1","[0]*x",0,5e13);
+  TF1* fit1 = new TF1("fit1","[0]*x",0,10e13);
   fit1->SetParameter(0,1e-12);
   fit1->SetLineColor(kBlack);
   fit1->SetLineStyle(9);
@@ -217,8 +220,8 @@ void Evaluate_Isidre()
 
   //Defines vector and states Isidre's systematic fluence error multiplier
   std::vector<Current> I_Isidre;
-  double Isidre_sys_fluence_error = 0.07;//7%
-
+  double Isidre_sys_fluence_error = 0.07;//7%  
+  
   //Determine max depletion voltage for each irradiated sensor and assign to variable. Format: "filename", min1, max1, min2, max2
   double C4_V = Extract_Max_Depletion_Voltage("Isidre_data/W332-C4_postanneal_CV.txt",50., 240., 260., 350.);
   double F2_V = Extract_Max_Depletion_Voltage("Isidre_data/W332-F2_postanneal_CV.txt",40., 75., 100., 300.);

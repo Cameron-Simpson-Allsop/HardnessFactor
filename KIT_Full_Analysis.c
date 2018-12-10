@@ -64,8 +64,8 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   g->SetMarkerColor(kBlack);
   g->SetMarkerStyle(20);
   g->SetMarkerSize(3);
-  g->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
-  g->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+  g->GetXaxis()->SetTitle("#phi (pcm^{-2})");
+  g->GetYaxis()->SetTitle("| #DeltaI | (nA)");
   g->GetXaxis()->SetRangeUser(-0.02e15,0.6e15);
   g->GetYaxis()->SetRangeUser(-2e3,70e3);
   g->SetTitle("");
@@ -107,8 +107,8 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   TLatex latex;
   latex.SetNDC();
   latex.SetTextSize(0.04);
-  latex.DrawLatex(0.49,0.2,"#kappa = 1.97 #pm 0.21");
-  //latex.DrawLatex(0.49,0.25,"#kappa_{[0]*x fit} = 2.859 #pm 0.286");
+  latex.DrawLatex(0.4,0.2,"#kappa_{all points} = 1.97 #pm 0.21");
+  latex.DrawLatex(0.4,0.25,"#kappa_{excluded #phi} = 2.20 #pm 0.28");
   gPad->RedrawAxis();
 
   //Sensor parameters
@@ -153,6 +153,12 @@ void Evaluate_KIT()
 
   double voltage = -91.;//V
 
+  
+  /*double minFitIrr = -70.;
+  double maxFitIrr = -50.;
+
+  double voltage = -60.;//V*/
+  
   //Extract leakage current and fluence measurements and put data into a vector
   for(unsigned int i{0}; i<filenamesIrr.size(); i++)
     {
