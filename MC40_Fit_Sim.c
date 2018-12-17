@@ -5,7 +5,14 @@
 #include "TF1.h"
 #include "TAxis.h"
 #include "rootlogonATLAS.h"
-
+//#include "RooRealVar.h"
+//#include "RooDataSet.h"
+//#include "RooGaussian.h"
+//#include "RooLandau.h"
+//#include "RooFFTConvPdf.h"
+//#include "RooPlot.h"
+//#include "RooCurve.h"
+//#include "RooDataHist.h"
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -26,7 +33,8 @@ double calcCurrent(double fluence, std::string fitType)
   else
     std::cout << "Invalid input for calcCurrent function" << std::endl;
   return 0.;
-}
+  }
+
 
 struct errors
 {
@@ -84,9 +92,9 @@ void MC40_Fit_Sim()
 
   //fit and histogram definitions
   
-  TH1F *hForce0 = new TH1F("Fit Gradient (Force 0)",";Fit Gradient (nA/p/cm^{2});Counts",100,1.2e-10,2.4e-10);
-  TH1F *hPol1 = new TH1F("Fit Gradient (Pol1)",";Fit Gradient (nA/p/cm^{2});Counts",100,0.8e-10,2.4e-10);
-  TH1F *hPol0 = new TH1F("Fit Intercept (Pol1)",";Fit Intercept (nA);Counts",100,-20,40);
+  TH1F *hForce0 = new TH1F("Fit Gradient (Force 0)",";Fit Gradient (nA/p/cm^{2});Counts",100,1.e-10,3.e-10);
+  TH1F *hPol1 = new TH1F("Fit Gradient (Pol1)",";Fit Gradient (nA/p/cm^{2});Counts",100,0.5e-10,3.e-10);
+  TH1F *hPol0 = new TH1F("Fit Intercept (Pol1)",";Fit Intercept (nA);Counts",100,-40,60);
   TF1 *fitForce0 = new TF1("fitForce0","[0]*x",0.,1.e13);
   TF1 *fitPol1 = new TF1("fitPol1","pol1",0.,1.e13);
 
@@ -99,10 +107,11 @@ void MC40_Fit_Sim()
       std::vector<double> fluencePoints = {};
       std::vector<double> currentPointsforce0 = {};
       std::vector<double> currentPointspol1 = {};
-      int N1{20};
-      for(int i{1}; i <= N1; ++i)
+      int N1{5};
+      for(int i{0}; i < N1; ++i)
 	{
-	  double fluencemean = i*0.5e11;
+	  double fluencemean = 1.e11 + i*2.e11;
+	  //double fluencemean = 1.e10 + i*2.e10;
 	  double fluencePoint = rndm2->Gaus(fluencemean, fluencemean*error.fracFluenceError);
 	  double currentmeanforce0 = calcCurrent(fluencemean, "force0");
 	  double currentPointforce0 = rndm2->Gaus(currentmeanforce0, currentmeanforce0*error.fracFluenceError);
@@ -111,7 +120,8 @@ void MC40_Fit_Sim()
 	  fluencePoints.push_back(fluencePoint);
 	  currentPointsforce0.push_back(currentPointforce0);
 	  currentPointspol1.push_back(currentPointpol1);
-	  //std::cout << fluencePoints[i-1] << "\t" << currentPointsforce0[i-1] << currentPointspol1[i-1] << std::endl;      
+	  //std::cout << fluencePoints[i] << "\t" << currentPointsforce0[i] << std::endl;
+	  //std::cout << fluencemean << std::endl;
 	}
   
       TGraph *gforce0 = new TGraph(fluencePoints.size(), &(fluencePoints[0]), &(currentPointsforce0[0]));
@@ -124,6 +134,83 @@ void MC40_Fit_Sim()
       hForce0->Fill(fitForce0->GetParameter(0));
       hPol1->Fill(fitPol1->GetParameter(1));
       hPol0->Fill(fitPol1->GetParameter(0));
+
+      if(n == 0)
+	{
+	  TCanvas *tmpforce00 = new TCanvas("tmpforce00","tmpforce00",600,600);
+	  gforce0->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+	  gforce0->GetYaxis()->SetTitle("#Delta I (-nA)");
+	  gforce0->GetYaxis()->SetTitleOffset(1.25);
+	  gforce0->SetTitle("");
+	  gforce0->SetMarkerStyle(20);
+	  gforce0->Draw("AP");
+	  fitForce0->Draw("same");
+	  
+	  TCanvas *tmppol10 = new TCanvas("tmppol10","temppol10",600,600);	  
+	  gpol1->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+	  gpol1->GetYaxis()->SetTitle("#Delta I (-nA)");
+	  gpol1->GetYaxis()->SetTitleOffset(1.25);
+	  gpol1->SetTitle("");
+	  gpol1->SetMarkerStyle(20);
+	  gpol1->Draw("AP");
+	  fitPol1->Draw("same");
+
+	  tmpforce00->SaveAs("DeltaI_vs_Phi_Force0_n0.png");
+	  tmppol10->SaveAs("DeltaI_vs_Phi__Pol1_n0.png");
+	  tmpforce00->Close();
+	  tmppol10->Close();
+	}
+      
+      else if(n == 500000)
+	{
+	  TCanvas *tmpforce01 = new TCanvas("tmpforce01","tmpforce01",600,600);
+	  gforce0->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+	  gforce0->GetYaxis()->SetTitle("#Delta I (-nA)");
+	  gforce0->GetYaxis()->SetTitleOffset(1.25);
+	  gforce0->SetTitle("");
+	  gforce0->SetMarkerStyle(20);
+	  gforce0->Draw("AP");
+	  fitForce0->Draw("same");
+	  
+	  TCanvas *tmppol11 = new TCanvas("tmppol11","temppol11",600,600);	  
+	  gpol1->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+	  gpol1->GetYaxis()->SetTitle("#Delta I (-nA)");
+	  gpol1->GetYaxis()->SetTitleOffset(1.25);
+	  gpol1->SetTitle("");
+	  gpol1->SetMarkerStyle(20);
+	  gpol1->Draw("AP");
+	  fitPol1->Draw("same");
+
+	  tmpforce01->SaveAs("DeltaI_vs_Phi_Force0_n1.png");
+	  tmppol11->SaveAs("DeltaI_vs_Phi__Pol1_n1.png");
+	  tmpforce01->Close();
+	  tmppol11->Close();
+	}
+      else if(n == 999999)
+	{
+	  TCanvas *tmpforce02 = new TCanvas("tmpforce02","tmpforce02",600,600);
+	  gforce0->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+	  gforce0->GetYaxis()->SetTitle("#Delta I (-nA)");
+	  gforce0->GetYaxis()->SetTitleOffset(1.25);
+	  gforce0->SetTitle("");
+	  gforce0->SetMarkerStyle(20);
+	  gforce0->Draw("AP");
+	  fitForce0->Draw("same");
+	  
+	  TCanvas *tmppol12 = new TCanvas("tmppol12","temppol12",600,600);	  
+	  gpol1->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+	  gpol1->GetYaxis()->SetTitle("#Delta I (-nA)");
+	  gpol1->GetYaxis()->SetTitleOffset(1.25);
+	  gpol1->SetTitle("");
+	  gpol1->SetMarkerStyle(20);
+	  gpol1->Draw("AP");
+	  fitPol1->Draw("same");
+
+	  tmpforce02->SaveAs("DeltaI_vs_Phi_Force0_n2.png");
+	  tmppol12->SaveAs("DeltaI_vs_Phi__Pol1_n2.png");
+	  tmpforce02->Close();
+	  tmppol12->Close();
+	}
     }
   TGaxis::SetMaxDigits(3);
   std::cout << "Average fractional fluence error = " << error.fracFluenceError << " +/- " << error.efracFluenceError << "\n" << "Average fractional current error = " << error.fracCurrentError << " +/- " << error.efracCurrentError << std::endl;							  
@@ -133,10 +220,21 @@ void MC40_Fit_Sim()
   std::cout << "Force 0 slope fractional error = " << force0Frac << "\n" << "Pol 1 fractional error = " << pol1Frac << std::endl;
 
   //Draw and fit histograms
+
+  /*RooRealVar grad("grad","gradient", 1.5e-10, 2.e-10);
+  RooRealVar mean("mean","gausmean", 1.8e-10, 1.5e-10, 2.e-10);
+  RooRealVar width("width","gauswidth", 7.e-12, 6.e-12, 8.e-12);
+
+  RooGaussian gradvalue("gradvalue","gradient PDF",grad,mean,width);
+  //RooDataSet *data = gradvalue.generate(grad,1000);
+  //gradvalue.fitTo(*data);*/
+
+  TF1 *landgaus = new TF1("landgaus","gaus(0)+landau(3)",1.2e-10,2.6e-10);
   
   TCanvas *c1 = new TCanvas("c1","c1",600,600);
   c1->Divide(1,3);
   c1->cd(1);
+  //hForce0->Fit("landgaus","R");
   hForce0->Fit("gaus");
   hForce0->Draw();
   c1->cd(2);
