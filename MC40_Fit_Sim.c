@@ -58,7 +58,11 @@ void MC40_Fit_Sim()
   int linecount{0};
   ifstream MC40;
   MC40.open("MC40_results.txt");
-
+  std::vector<double> fluences;
+  std::vector<double> currents;
+  std::vector<double> efluences;
+  std::vector<double> ecurrents;
+  
   //read in MC40 results and calculate average fractional error for current and fluence
   
   if(!MC40.good()) 
@@ -67,14 +71,73 @@ void MC40_Fit_Sim()
     while(!MC40.eof())
       {
 	MC40 >> fluence >> current >> efluence >> ecurrent;
-	//std::cout << fluence << "\t" << efluence << "\t" << current << "\t" << ecurrent << std::endl;
+	std::cout << fluence << "\t" << efluence << "\t" << current << "\t" << ecurrent << std::endl;
 	std::cout << "fractional fluence/current error = " << efluence/fluence << "\t" << ecurrent/current << std::endl;
+	fluences.push_back(fluence);
+	currents.push_back(current);
+	efluences.push_back(efluence);
+	ecurrents.push_back(ecurrent);
 	error.fracFluenceErrors.push_back(efluence/fluence);
 	error.fracCurrentErrors.push_back(ecurrent/current);
 	sumFracFluenceError += efluence/fluence;
 	sumFracCurrentError += ecurrent/current;
 	++linecount;
       }
+
+
+  TGraph *fracCurrent = new TGraph(currents.size(), &(currents[0]), &(error.fracCurrentErrors[0]));
+  fracCurrent->GetXaxis()->SetTitle("#Delta I (nA)");
+  fracCurrent->GetYaxis()->SetTitle("#frac{#sigma #Delta I}{#Delta I}");
+  fracCurrent->SetTitle("");
+  fracCurrent->SetMarkerStyle(20);
+  TGraph *fracFluence = new TGraph(fluences.size(), &(fluences[0]), &(error.fracFluenceErrors[0]));
+  fracFluence->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+  fracFluence->GetYaxis()->SetTitle("#frac{#sigma #phi}{#phi}");
+  fracFluence->SetTitle("");
+  fracFluence->SetMarkerStyle(20);
+  TGraph *crossCurrent = new TGraph(fluences.size(), &(fluences[0]), &(error.fracCurrentErrors[0]));
+  crossCurrent->GetXaxis()->SetTitle("#phi (p/cm^{2})");
+  crossCurrent->GetYaxis()->SetTitle("#frac{#sigma #Delta I}{#Delta I}");
+  crossCurrent->SetTitle("");
+  crossCurrent->SetMarkerStyle(20);
+  TGraph *crossFluence = new TGraph(currents.size(), &(currents[0]), &(error.fracFluenceErrors[0]));
+  crossFluence->GetXaxis()->SetTitle("#Delta I (nA)");
+  crossFluence->GetYaxis()->SetTitle("#frac{#sigma #phi}{#phi}");
+  crossFluence->SetTitle("");
+  crossFluence->SetMarkerStyle(20);    
+  TCanvas *fracError = new TCanvas("fracError","fracError",600,600);
+  fracError->Divide(2,2);
+  fracError->cd(1);
+  fracCurrent->Draw("AP");
+  fracError->cd(2);
+  fracFluence->Draw("AP");
+  fracError->cd(3);
+  crossCurrent->Draw("AP");
+  fracError->cd(4);
+  crossFluence->Draw("AP");
+  fracError->SaveAs("Fractional_Current_Fluence_Error.png");
+
+  TGraph *errorCurrent = new TGraph(currents.size(), &(currents[0]), &(ecurrents[0]));
+  errorCurrent->GetXaxis()->SetTitle("#Delta I (nA)");
+  errorCurrent->GetYaxis()->SetTitle("#sigma #Delta I (nA)");
+  errorCurrent->SetTitle("");
+  errorCurrent->SetMarkerStyle(20);
+  TGraph *errorFluence = new TGraph(fluences.size(), &(fluences[0]), &(efluences[0]));
+  errorFluence->GetXaxis()->SetTitle("#Delta I (nA)");
+  errorFluence->GetYaxis()->SetTitle("#sigma #Delta I (nA)");
+  errorFluence->SetTitle("");
+  errorFluence->SetMarkerStyle(20);
+  TCanvas *Error = new TCanvas("Error","Error",600,600);
+  Error->Divide(1,2);
+  Error->cd(1);
+  errorCurrent->Fit("pol1");
+  errorCurrent->Draw("AP");
+  Error->cd(2);
+  errorFluence->Fit("pol1");
+  errorFluence->Draw("AP");
+  Error->SaveAs("Current_Fluence_Error.png");
+  
+  
   std::cout << "===================================================================" << std::endl;
 
   error.fracFluenceError = sumFracFluenceError/(linecount*1.);
@@ -229,7 +292,7 @@ void MC40_Fit_Sim()
   //RooDataSet *data = gradvalue.generate(grad,1000);
   //gradvalue.fitTo(*data);*/
 
-  TF1 *landgaus = new TF1("landgaus","gaus(0)+landau(3)",1.2e-10,2.6e-10);
+  //TF1 *landgaus = new TF1("landgaus","gaus(0)+landau(3)",1.2e-10,2.6e-10);
   
   TCanvas *c1 = new TCanvas("c1","c1",600,600);
   c1->Divide(1,3);
