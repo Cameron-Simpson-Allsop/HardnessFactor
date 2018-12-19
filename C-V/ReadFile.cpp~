@@ -1,0 +1,19 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+
+void ReadFile()
+{
+  std::string filePath = "../../ALiBaVa/ATLAS17minis_GammaIrrad/I-V/Post_Anneal/ATLAS17_10Mrad_PostAnneal_IV_16-11-2018.txt";
+  ifstream inFile;
+  inFile.open(filePath);
+
+  if(!inFile.good)
+    {
+      std::cout << "Error Opening File" << std::endl;
+    }
+  else if (inFile.good)
+    {
+      std::string line;
+    }
+}
