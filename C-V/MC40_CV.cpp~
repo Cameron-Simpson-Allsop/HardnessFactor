@@ -1,0 +1,209 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <algorithm>
+#include <vector>
+
+struct Data
+{
+  std::vector<double> Voltages; //(V)
+  std::vector<double> Capacitances; //(F)
+  std::vector<double> OneOverC2; //(F^-2)
+  std::vector<double> eVoltages; //(V)
+  std::vector<double> eCapacitances; //(F)
+  std::vector<double> eOneOverC2; //(F^-2)
+  std::vector<double> logVoltages;
+  std::vector<double> logCapacitances;
+  std::vector<double> elogVoltages;
+  std::vector<double> elogCapacitances;
+  double Fluence; //(p/cm^2)
+  double eFluence; //(p/cm^2)
+};
+
+double StdDev(double c1, double c2, double c3, double c4, double c5, double mean)
+{
+  double sumSquares = pow(c1-mean,2) + pow(c2-mean,2) + pow(c3-mean,2) + pow(c4-mean,2) + pow(c5-mean,2);
+  return pow(sumSquares/4.,0.5); 
+}
+
+Data ReadFile(std::string filePath, std::string fileHeaderStart)
+{
+  ifstream inFile;
+  inFile.open(filePath);
+  Data data;
+  std::vector<double> Voltage;
+  std::vector<double> Capacitance;
+  double capacitanceMean{0};
+
+  if(!inFile.good())
+    {
+      std::cout << "Error Opening Input File" << std::endl;
+    }
+  else if(inFile.good())
+    {
+      std::string line{""};
+      std::string timeStamp{""};
+      double voltage{}, current{}, resistance{}, capacitance{}, fluence{}, efluence{};
+      int linecount{1};
+      while(!inFile.eof())
+	{
+	  getline(inFile,line);
+	  if(line.find(fileHeaderStart) == 0)
+	    {
+	      //std::cout << line << std::endl;
+	    }
+	  else if(linecount == 5)
+	    {
+	      //std::cout << line << std::endl;
+	      stringstream ssfluence(line);
+	      ssfluence >> fluence >> efluence;
+	      //std::cout << fluence << " +/- " << efluence << std::endl;
+	      data.Fluence = fluence;
+	      data.eFluence = efluence;
+	    }
+	  else if(linecount > 28)
+	    {
+	      //std::cout << line << std::endl;
+	      stringstream ssdata(line);
+	      ssdata >> timeStamp >> voltage >> current >> resistance >> capacitance;
+	      //std ::cout << timeStamp << "\t" << voltage << "\t" << current << "\t" << resistance << "\t" << capacitance << std::endl;
+	      Voltage.push_back(voltage);
+	      Capacitance.push_back(capacitance);
+	    }  
+	  ++linecount;
+	}
+    }
+  
+  int n{0};
+  for(int i{0}; i<=Voltage.size(); ++i)
+    {
+      if(n != 5){++n;}
+      else if(n == 5)
+	{
+	  n = 1;
+	  data.Voltages.push_back((Voltage[i-1] + Voltage[i-2] + Voltage[i-3] + Voltage[i-4] +Voltage[i-5])/5.);
+	  data.eVoltages.push_back(0.05);
+	  capacitanceMean = (Capacitance[i-1] + Capacitance[i-2] + Capacitance[i-3] + Capacitance[i-4] +Capacitance[i-5])/5.;
+	  data.Capacitances.push_back(capacitanceMean);
+	  double ecapacitanceMean{StdDev(Capacitance[i-1],Capacitance[i-2],Capacitance[i-3],Capacitance[i-4],Capacitance[i-5],capacitanceMean)};
+	  data.eCapacitances.push_back(ecapacitanceMean);
+	  data.OneOverC2.push_back(1/pow(capacitanceMean,2));
+	  data.eOneOverC2.push_back(2*ecapacitanceMean/pow(capacitanceMean,3));
+	  data.logVoltages.push_back(log((Voltage[i-1] + Voltage[i-2] + Voltage[i-3] + Voltage[i-4] +Voltage[i-5])/5.));
+	  data.elogVoltages.push_back(0.05/((Voltage[i-1] + Voltage[i-2] + Voltage[i-3] + Voltage[i-4] +Voltage[i-5])/5.));
+	  data.logCapacitances.push_back(log(capacitanceMean));
+	  data.elogCapacitances.push_back(ecapacitanceMean/capacitanceMean);
+	}      
+    }
+
+  /*
+  for(int i{0}; i<data.Voltages.size(); ++i)
+    {
+      std::cout << "Voltage (V)" << "\t\t" << "Capacitance (F)" << "\t\t" << "1/C^2 (F^-2)" << std::endl;
+      std::cout << data.Voltages[i] << " +/- " << data.eVoltages[i] << "\t\t" << data.Capacitances[i] << " +/- " << data.eCapacitances[i] << "\t\t" << data.OneOverC2[i] << " +/- " << data.eOneOverC2[i] << std::endl;
+    }
+  */ 
+  return data;
+}
+
+void Plotter(Data data, TString graphTitle, int DiodeNumber, std::string irradstate)
+{
+
+  /*
+  double minFitLeft, minFitRight, maxFitLeft, maxFitRight;
+  
+  switch(DiodeNumber)
+    {
+    case 25: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 26: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 27: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 28: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 29: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 30: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 31: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 32: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 33: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 34: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 35: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 36: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 37: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 38: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 39: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 40: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 41: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 42: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 43: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 44: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+  
+    case 45: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 46: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 47: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+
+    case 48: minFitLeft{}; maxFitLeft{}; minFitRight{}; maxFitRight{}; break;
+      
+    }
+
+  TF1 *fitLeft = new TF1("fitLeft", "pol1", minFitLeft, maxFitLeft);
+  TF1 *fitRight = new TF1("fitRight", "pol1", minFitRight, maxFitRight);
+  fitLeft->SetLineColor(kRed);
+  fitRight->SetLineColor(kRed);)
+
+  */  
+
+  TGaxis::SetMaxDigits(3);
+  //TGraphErrors *g = new TGraphErrors(data.Voltages.size(), &(data.Voltages[0]), &(data.OneOverC2[0]), &(data.eVoltages[0]), &(data.eOneOverC2[0]));
+  TGraphErrors *g = new TGraphErrors(data.logVoltages.size(), &(data.logVoltages[0]), &(data.logCapacitances[0]), &(data.elogVoltages[0]), &(data.elogCapacitances[0]));
+  //g->GetXaxis()->SetTitle("Bias Voltage [V]");
+  //g->GetYaxis()->SetTitle("#frac{1}{C^{2}} [F^{-2}]");
+  g->GetXaxis()->SetTitle("Ln(V) [Ln(V)]");
+  g->GetYaxis()->SetTitle("Ln(C) [Ln(F)]");
+  g->SetTitle(graphTitle);
+  g->SetMarkerStyle(20);
+  g->GetYaxis()->SetTitleOffset(1.2);
+
+  TCanvas *can = new TCanvas(graphTitle,graphTitle,600,600);
+  can->SetLeftMargin(0.13);
+  g->Draw("AP");
+  TString PlotFile = "Diode" + std::to_string(DiodeNumber) + "_CV_" + irradstate + ".png";
+  //can->SaveAs(PlotFile);
+}
+
+void MC40_CV()
+{
+  std::string irradstate{"PostAnneal"};
+  std::string fileHeaderStart{"Time/Date"};
+  
+  std::cout << "File List " << std::endl;
+  for(int i{25}; i<=48; ++i)
+    {  
+      std::string filePath = "Diode" + std::to_string(i) + "_CV_" + irradstate + ".txt";
+      std::cout << filePath << std::endl;
+      Data data = ReadFile(filePath, fileHeaderStart);
+      TString graphTitle = "Diode " + std::to_string(i);
+      Plotter(data, graphTitle, i, irradstate);
+    }
+  
+}
+  
+  

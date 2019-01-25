@@ -159,32 +159,14 @@ double calc(double fluence, double efluence)
 
 void Evaluate_MC40()
 {
-  //Defines vector and states MC40 cylcotron's systematic fluence error multiplier
-  std::vector<Current> I_MC40_warm;
-  std::vector<Current> I_MC40_cold;
   std::vector<Current> I_MC40_combined;
-  
-  //Warm Irradiated filenames and fluences
-  std::vector<TString> filenamesIrr_warm = {"Diode26_IV_irradiated_0603.txt","Diode28_IV_irradiated_0603.txt","Diode30_IV_irradiated_0603.txt","Diode32_IV_irradiated_0603.txt","Diode34_IV_irradiated_0603.txt","Diode36_IV_irradiated_0603.txt","Diode25_IV_irradiated_0603.txt","Diode27_IV_irradiated_0603.txt","Diode29_IV_irradiated_0603.txt","Diode31_IV_irradiated_0603.txt","Diode33_IV_irradiated_0603.txt","Diode35_IV_irradiated_0603.txt"};
-  std::vector<double> fluencesIrr_warm = {6.52E+13/c, 1.87E+14/c, 2.92e14/c, 3.61e14/c, 5.34e14/c, 3.82e14/c, 6.52E+13/c, 1.87E+14/c, 2.92e14/c, 3.61e14/c, 5.34e14/c, 3.82e14/c};//p cm^-2
-  std::vector<double> efluencesIrr_warm = {calc(fluencesIrr_warm[0],4.30E+12),calc(fluencesIrr_warm[1],5.00E+12),calc(fluencesIrr_warm[2],0.09e14),calc(fluencesIrr_warm[3],0.11e14),calc(fluencesIrr_warm[4],0.12e14),calc(fluencesIrr_warm[5],0.13e14),calc(fluencesIrr_warm[6],4.30E+12),calc(fluencesIrr_warm[7],5.00E+12),calc(fluencesIrr_warm[8],0.09e14),calc(fluencesIrr_warm[9],0.11e14),calc(fluencesIrr_warm[10],0.12e14),calc(fluencesIrr_warm[11],0.13e14)}; //numbers are the error on the uncalibrated fluence
-  
-  //Cold Irradiated filenames and fluences
-  std::vector<TString> filenamesIrr_cold = {"Diode38_IV_irradiated_0603.txt","Diode40_IV_irradiated_0603.txt","Diode42_IV_irradiated_0603.txt","Diode44_IV_irradiated_0603.txt","Diode46_IV_irradiated_0603.txt","Diode48_IV_irradiated_0603.txt","Diode37_IV_irradiated_0603.txt","Diode39_IV_irradiated_0603.txt","Diode41_IV_irradiated_0603.txt","Diode43_IV_irradiated_0603.txt","Diode45_IV_irradiated_0603.txt","Diode47_IV_irradiated_0603.txt"};
-  std::vector<double> fluencesIrr_cold = {1.58e15/c, 2.81E+14/c, 7.51e13/c, 1.13e14/c, 4.88e13/c, 1.76e13/c, 1.58e15/c, 2.81E+14/c, 7.51e13/c, 1.13e14/c, 4.88e13/c, 1.76e13/c};//p cm^-2
-  std::vector<double> efluencesIrr_cold = {calc(fluencesIrr_cold[0],0.02e15),calc(fluencesIrr_cold[1],0.08E+14),calc(fluencesIrr_cold[2],0.41e13),calc(fluencesIrr_cold[3],0.04e14),calc(fluencesIrr_cold[4],0.36e13),calc(fluencesIrr_cold[5],0.27e13),calc(fluencesIrr_cold[6],0.02e15),calc(fluencesIrr_cold[7],0.08E+14),calc(fluencesIrr_cold[8],0.41e13),calc(fluencesIrr_cold[9],0.04e14),calc(fluencesIrr_cold[10],0.36e13),calc(fluencesIrr_cold[11],0.27e13)};//numbers are the error on the uncalibrated fluence
-  
+ 
   //Combined Irradiated filenames and fluences
   std::vector<TString> filenamesIrr_combined = {"Diode26_IV_irradiated_0603.txt","Diode28_IV_irradiated_0603.txt","Diode30_IV_irradiated_0603.txt","Diode32_IV_irradiated_0603.txt","Diode34_IV_irradiated_0603.txt","Diode36_IV_irradiated_0603.txt","Diode25_IV_irradiated_0603.txt","Diode27_IV_irradiated_0603.txt","Diode29_IV_irradiated_0603.txt","Diode31_IV_irradiated_0603.txt","Diode33_IV_irradiated_0603.txt","Diode35_IV_irradiated_0603.txt","Diode38_IV_irradiated_0603.txt","Diode40_IV_irradiated_0603.txt","Diode42_IV_irradiated_0603.txt","Diode44_IV_irradiated_0603.txt","Diode46_IV_irradiated_0603.txt","Diode48_IV_irradiated_0603.txt","Diode37_IV_irradiated_0603.txt","Diode39_IV_irradiated_0603.txt","Diode41_IV_irradiated_0603.txt","Diode43_IV_irradiated_0603.txt","Diode45_IV_irradiated_0603.txt","Diode47_IV_irradiated_0603.txt"};
   std::vector<double> fluencesIrr_combined = {6.52E+13/c, 1.87E+14/c, 2.92e14/c, 3.61e14/c, 5.34e14/c, 3.82e14/c, 6.52E+13/c, 1.87E+14/c, 2.92e14/c, 3.61e14/c, 5.34e14/c, 3.82e14/c, 1.58e15/c, 2.81E+14/c, 7.51e13/c, 1.13e14/c, 4.88e13/c, 1.76e13/c, 1.58e15/c, 2.81E+14/c, 7.51e13/c, 1.13e14/c, 4.88e13/c, 1.76e13/c};//p cm^-2
   std::vector<double> efluencesIrr_combined = {calc(fluencesIrr_warm[0],4.30E+12),calc(fluencesIrr_warm[1],5.00E+12),calc(fluencesIrr_warm[2],0.09e14),calc(fluencesIrr_warm[3],0.11e14),calc(fluencesIrr_warm[4],0.12e14),calc(fluencesIrr_warm[5],0.13e14),calc(fluencesIrr_warm[6],4.30E+12),calc(fluencesIrr_warm[7],5.00E+12),calc(fluencesIrr_warm[8],0.09e14),calc(fluencesIrr_warm[9],0.11e14),calc(fluencesIrr_warm[10],0.12e14),calc(fluencesIrr_warm[11],0.13e14),calc(fluencesIrr_cold[0],0.02e15),calc(fluencesIrr_cold[1],0.08E+14),calc(fluencesIrr_cold[2],0.41e13),calc(fluencesIrr_cold[3],0.04e14),calc(fluencesIrr_cold[4],0.36e13),calc(fluencesIrr_cold[5],0.27e13),calc(fluencesIrr_cold[6],0.02e15),calc(fluencesIrr_cold[7],0.08E+14),calc(fluencesIrr_cold[8],0.41e13),calc(fluencesIrr_cold[9],0.04e14),calc(fluencesIrr_cold[10],0.36e13),calc(fluencesIrr_cold[11],0.27e13)};
-  
-  //Warm Unirradiated filenames
-  std::vector<TString> filenames_warm = {"Diode26_IV_2602.txt","Diode28_IV_2602.txt","Diode30_IV_2602.txt","Diode32_IV_2602.txt","Diode34_IV_2602.txt","Diode36_IV_2602.txt","Diode25_IV_2602.txt","Diode27_IV_2602.txt","Diode29_IV_2602.txt","Diode31_IV_2602.txt","Diode33_IV_2602.txt","Diode35_IV_2602.txt"};
-  //Cold Unirradiated filenames
-  std::vector<TString> filenames_cold = {"Diode38_IV_2602.txt","Diode40_IV_2802.txt","Diode42_IV_2802.txt","Diode44_IV_2802.txt","Diode46_IV_2802.txt","Diode48_IV_2802.txt","Diode37_IV_2602.txt","Diode39_IV_2602.txt","Diode41_IV_2802.txt","Diode43_IV_2802.txt","Diode45_IV_2802.txt","Diode47_IV_2802.txt"};
-  //Combined Unirradiated filenames
-  std::vector<TString> filenames_combined = {"Diode26_IV_2602.txt","Diode28_IV_2602.txt","Diode30_IV_2602.txt","Diode32_IV_2602.txt","Diode34_IV_2602.txt","Diode36_IV_2602.txt","Diode25_IV_2602.txt","Diode27_IV_2602.txt","Diode29_IV_2602.txt","Diode31_IV_2602.txt","Diode33_IV_2602.txt","Diode35_IV_2602.txt","Diode38_IV_2602.txt","Diode40_IV_2802.txt","Diode42_IV_2802.txt","Diode44_IV_2802.txt","Diode46_IV_2802.txt","Diode48_IV_2802.txt","Diode37_IV_2602.txt","Diode39_IV_2602.txt","Diode41_IV_2802.txt","Diode43_IV_2802.txt","Diode45_IV_2802.txt","Diode47_IV_2802.txt"};
+ 
+  std::vector<TString> filenames_combined = {"Diode25_IV_2602.txt","Diode26_IV_2602.txt","Diode27_IV_2602.txt","Diode28_IV_2602.txt","Diode29_IV_2602.txt","Diode30_IV_2602.txt","Diode31_IV_2602.txt","Diode32_IV_2602.txt","Diode33_IV_2602.txt","Diode34_IV_2602.txt","Diode35_IV_2602.txt","Diode36_IV_2602.txt","Diode37_IV_2602.txt","Diode38_IV_2602.txt","Diode39_IV_2602.txt","Diode40_IV_2802.txt","Diode41_IV_2802.txt","Diode42_IV_2802.txt","Diode43_IV_2802.txt","Diode44_IV_2802.txt","Diode45_IV_2802.txt","Diode46_IV_2802.txt","Diode47_IV_2802.txt","Diode48_IV_2802.txt"};
 
   //Irradiated variables
   double minFitIrr = -100.;
@@ -196,41 +178,26 @@ void Evaluate_MC40()
   double minFit = -110.;
   double maxFit = -40.;
 
-  double voltage = -91.;//V
-     
-  //Extract leakage current and fluence measurements and calculate change in leakage current for each warm sensor. Then put data into a vector
-  for(unsigned int i{0}; i<filenamesIrr_warm.size(); i++)
+  //double voltage = -91.;//V
+  ifstream maxdeps;
+  maxdeps.open("C-V/MaxDep_vs_Fluence.txt");
+  if(!maxdeps.good())
     {
-
-      Current I_1w = Extract_Current(filenamesIrr_warm[i],voltage,minFitIrr,maxFitIrr,fluencesIrr_warm[i],efluencesIrr_warm[i]);
-      Current I_2w = Extract_Current(filenames_warm[i],voltage,minFit,maxFit,fluences,efluences);
-  
-      Current I_3w;
-      I_3w.Mean_current = I_1w.Mean_current - I_2w.Mean_current;
-      I_3w.eMean_current = pow(pow(I_1w.eMean_current,2) + pow(I_2w.eMean_current,2),0.5);
-      I_3w.Fluence = I_1w.Fluence;
-      I_3w.eFluence = I_1w.eFluence;  
-      I_MC40_warm.push_back(I_3w);
-  
-      std::cout << "Current = " << I_3w.Mean_current << " +/- " << I_3w.eMean_current << " nA \n" << "Fluence = " << I_3w.Fluence << " +/- " << I_3w.eFluence << " p/cm^2 \n";
+      std::cout << "'MaxDep_vs_Fluence.txt' not found" << std::endl;
     }
-  
-  //Extract leakage current and fluence measurements and calculate change in leakage current for each cold sensor. Then put data into a vector
-  for(unsigned int i{0}; i<filenames_cold.size(); i++)
-    {
-
-      Current I_1c = Extract_Current(filenamesIrr_cold[i],voltage,minFitIrr,maxFitIrr,fluencesIrr_cold[i],efluencesIrr_cold[i]);
-      Current I_2c = Extract_Current(filenames_cold[i],voltage,minFit,maxFit,fluences,efluences);
-  
-      Current I_3c;
-      I_3c.Mean_current = I_1c.Mean_current - I_2c.Mean_current;
-      I_3c.eMean_current = pow(pow(I_1c.eMean_current,2) + pow(I_2c.eMean_current,2),0.5);
-      I_3c.Fluence = I_1c.Fluence;
-      I_3c.eFluence = I_1c.eFluence;  
-      I_MC40_cold.push_back(I_3c);
-  
-      std::cout << "Current = " << I_3c.Mean_current << " +/- " << I_3c.eMean_current << " nA \n" << "Fluence = " << I_3c.Fluence << " +/- " << I_3c.eFluence << " p/cm^2 \n";
-    }
+  else
+    int count{0};
+  double DiodeNumber, tmpFluence, MaxDepVolt;
+  std::vector<double> MaxDeps;
+    while(!maxdeps.eof())
+      {
+	if(count != 0)
+	  {
+	    maxdeps >> DiodeNumber >> tmpFluence >> MaxDepVolt;
+	    MaxDeps.push_back(MaxDepVolt);
+	    ++count;
+	  }
+      }
 
   //Extract leakage current and fluence measurements and calculate change in leakage current for all sensors. Then put data into a vector
   for(unsigned int i{0}; i<filenames_combined.size(); i++)
@@ -248,17 +215,13 @@ void Evaluate_MC40()
   
       std::cout << "Current = " << I_3.Mean_current << " +/- " << I_3.eMean_current << " nA \n" << "Fluence = " << I_3.Fluence << " +/- " << I_3.eFluence << " p/cm^2 \n";
     }
-
-  std::cout << "filename" << "\t\t" << "fluence (p/cm^2)" << std::endl;
-  for(unsigned int i{0}; i<filenames_combined.size(); i++)
-    {
-      std::cout << filenames_combined[i] << "\t" << fluencesIrr_combined[i] << " +/- " << efluencesIrr_combined[i] << std::endl;
-    }
   
   //Extract current related damage rate and  hardness factor value for each data set. Uncomment desired set
   //Extract_Hardness_Factor(I_MC40_warm);
   //Extract_Hardness_Factor(I_MC40_cold);
   Extract_Hardness_Factor(I_MC40_combined);
+  maxdeps.close();
+
 }
 
 void MC40_Full_Analysis()

@@ -21,15 +21,22 @@ double StdDev(double c1, double c2, double c3, double c4, double c5, double mean
 Data ReadFile(std::string filePath, std::string fileHeaderStart)
 {
   ifstream inFile;
+  ofstream outFile;
   inFile.open(filePath);
+  outFile.open("testOutputFile.txt");
   Data data;
   std::vector<double> Voltage;
   std::vector<double> Current;
   double currentMean{0};
+
+  if(!outFile.good())
+    {
+      std::cout << "Error Creating Output File" << std::endl;
+    }
   
   if(!inFile.good())
     {
-      std::cout << "Error Opening File" << std::endl;
+      std::cout << "Error Opening Input File" << std::endl;
     }
   else if (inFile.good())
     {
@@ -73,6 +80,8 @@ Data ReadFile(std::string filePath, std::string fileHeaderStart)
   for(int i{0}; i<data.Voltages.size(); ++i)
     {
       std::cout << data.Voltages[i] << " +/- " << data.eVoltages[i] << "\t\t" << data.Currents[i] << " +/- " << data.eCurrents[i] << std::endl;
+
+      outFile << data.Voltages[i] << "\t" << data.Currents[i] << "\t" << data.eVoltages[i] << "\t" << data.eCurrents[i] << std::endl;
     }
   return data;
 }

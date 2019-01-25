@@ -371,8 +371,8 @@ void MC40_Fit_Sim()
   RooPlots->cd(3);
   framePol0->Draw();*/
 
-    TF1 *gaussian1 = new TF1("gaussian1","gaus", 1.4e-10, 2.e-10);
-    TF1 *gaussian2 = new TF1("gaussian2","gaus", 1.05e-10, 2.e-10);
+    TF1 *gaussian1 = new TF1("gaussian1","gaus", 1.4e-10, 2.1e-10);
+    TF1 *gaussian2 = new TF1("gaussian2","gaus", 1.05e-10, 2.05e-10);
     
     TCanvas *c1 = new TCanvas("c1","c1",600,600);
     c1->Divide(1,3);
