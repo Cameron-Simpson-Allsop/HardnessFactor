@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include "rootlogonATLAS.h"
 
 struct Data
 {
@@ -142,7 +143,7 @@ double MaxDep(Data data, TString graphTitle, int DiodeNumber, std::string irrads
   TF1 *fitRight = new TF1("fitRight", "pol1", minFitRight, maxFitRight);
   fitLeft->SetParameter(1,-0.5);
   fitLeft->SetLineColor(kRed);
-  fitRight->SetLineColor(kRed); 
+  fitRight->SetLineColor(kRed);
 
   TGaxis::SetMaxDigits(3);
   //TGraphErrors *g = new TGraphErrors(data.Voltages.size(), &(data.Voltages[0]), &(data.OneOverC2[0]), &(data.eVoltages[0]), &(data.eOneOverC2[0]));
@@ -152,7 +153,7 @@ double MaxDep(Data data, TString graphTitle, int DiodeNumber, std::string irrads
   g->GetXaxis()->SetTitle("Ln(V) [Ln(V)]");
   g->GetYaxis()->SetTitle("Ln(C) [Ln(F)]");
   g->SetMarkerStyle(20);
-  g->GetYaxis()->SetTitleOffset(1.7);
+  g->GetYaxis()->SetTitleOffset(1.8);
 
   if(DiodeNumber == 31)
     {
@@ -165,13 +166,22 @@ double MaxDep(Data data, TString graphTitle, int DiodeNumber, std::string irrads
 
   g->Fit(fitLeft,"RN");
   g->Fit(fitRight,"RN");
-  
+
   TCanvas *can = new TCanvas(graphTitle,graphTitle,600,600);
-  can->SetLeftMargin(0.13);
+  can->SetLeftMargin(0.2);
+  can->SetTopMargin(0.2);
   g->Draw("AP");
   fitLeft->Draw("same");
   fitRight->Draw("same");
-  TString PlotFile = "Diode" + std::to_string(DiodeNumber) + "_CV_" + irradstate + ".pdf";
+  
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextSize(0.04);
+  latex.DrawLatex(0.6,0.5,"(1)");
+  latex.DrawLatex(0.6,0.5,"(2)");
+  gPad->RedrawAxis();
+  
+  TString PlotFile = "Diode" + std::to_string(DiodeNumber) + "_CV_" + irradstate + ".png";
   //can->SaveAs(PlotFile);
 
   p0l = fitLeft->GetParameter(0);
@@ -186,6 +196,7 @@ double MaxDep(Data data, TString graphTitle, int DiodeNumber, std::string irrads
 
 void MC40_CV()
 {
+  rootlogonATLAS();
   ofstream maxdeps;
   maxdeps.open("MaxDep_vs_Fluence.txt");
   std::string irradstate{"PostAnneal"};
@@ -214,10 +225,13 @@ void MC40_CV()
       g->GetYaxis()->SetTitle("Max Depletion Voltage (V)");
       g->GetXaxis()->SetTitle("Fluence (p/cm^{2})");
       g->SetTitle("");
+      g->GetYaxis()->SetTitleOffset(1.5);
       g->SetMarkerStyle(20);
 
       TCanvas *canvas = new TCanvas("MaxDep_vs_Fluence","MaxDep_vs_Fluence",600,600);
-      canvas->SetLeftMargin(0.13);
+      canvas->SetLeftMargin(0.16);
+      canvas->SetRightMargin(0.13);
+      canvas->SetTopMargin(0.2);
       g->Draw("AP");
       //canvas->SaveAs("MaxDep_vs_Fluence.pdf");
     }
