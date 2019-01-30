@@ -107,8 +107,8 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   TLatex latex;
   latex.SetNDC();
   latex.SetTextSize(0.04);
-  latex.DrawLatex(0.4,0.2,"#kappa_{all points} = 1.97 #pm 0.21");
-  latex.DrawLatex(0.4,0.25,"#kappa_{excluded #phi} = 2.20 #pm 0.28");
+  //latex.DrawLatex(0.4,0.2,"#kappa_{all points} = 1.97 #pm 0.21");
+  latex.DrawLatex(0.4,0.25,"#kappa = 2.20 #pm 0.28");
   gPad->RedrawAxis();
 
   //Sensor parameters

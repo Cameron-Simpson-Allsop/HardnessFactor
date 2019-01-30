@@ -81,7 +81,7 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   fit->SetParameter(0,0);
   fit->SetLineColor(kBlue);
   
-  TF1* fit1 = new TF1("fit1","[0]*x",0,10.e13);
+  TF1* fit1 = new TF1("fit1","[0]*x",0,20.e13);
   fit1->SetParameter(0,1.e-12);
   fit1->SetLineColor(kBlack);
   fit1->SetLineStyle(9);
