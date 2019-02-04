@@ -1,0 +1,141 @@
+#include "TGraphErrors.h"
+#include "TCanvas.h"
+#include "TF1.h"
+#include "TAxis.h"
+#include "TString.h"
+#include "iostream"
+#include "rootlogonATLAS.h"
+#include "fstream"
+#include <algorithm>
+
+struct DiodeFluence
+{
+  std::vector<int> DiodeNumber;
+  std::vector<double> DiodeFluence;
+  std::vector<double> eDiodeFluence;
+};
+
+struct Data
+{
+  int DiodeNumber;
+  std::vector<double> voltage;
+  std::vector<double> current;
+  std::vector<double> evoltage;
+  std::vector<double> ecurrent;
+  std::vector<double> currentupper;
+  std::vector<double> currentlower;
+  double temperature;
+  double etemperature;  
+};
+
+DiodeFluence GetFluences()
+{
+  DiodeFluence diode;
+  std::string filepath{"MaxDep_vs_Fluence.txt"};
+  ifstream inFile;
+  inFile.open(filepath);
+  if(!inFile.good())
+    {
+      std::cout << "Error opening file: '" + filepath + "'..." << std::endl;
+    }
+  std::string line{""};
+  getline(inFile,line);
+  while(!inFile.eof())
+    {
+      int DiodeNumber;
+      double Fluence, eFluence, MaxDep;
+      inFile >> DiodeNumber >> Fluence >> eFluence >> MaxDep;
+      //std::cout << "\t" << DiodeNumber << "\t" << Fluence << "\t" << eFluence << "\t" << MaxDep << std::endl;
+      diode.DiodeNumber.push_back(DiodeNumber);
+      diode.DiodeFluence.push_back(Fluence);
+      diode.eDiodeFluence.push_back(eFluence);
+    }
+  inFile.close();
+  return diode;
+}
+
+double StdDev(double c1, double c2, double c3, double c4, double c5, double mean)
+{
+  double sumSquares = pow(c1-mean,2) + pow(c2-mean,2) + pow(c3-mean,2) + pow(c4-mean,2) + pow(c5-mean,2);
+  return pow(sumSquares/4.,0.5); 
+}
+
+Data GetFile(int DiodeNumber, std::string irradstate)
+{
+  ifstream inFile;
+  std::string filePath = "Diode" + std::to_string(DiodeNumber) + "_IV_" + irradstate + ".txt";
+  inFile.open(filePath);
+  Data data;
+  std::vector<double> Voltage;
+  std::vector<double> Current;
+  data.DiodeNumber = DiodeNumber;
+
+  if(!inFile.good())
+    {
+      std::cout << "Error Opening Input File..." << std::endl;
+    }
+  else if(inFile.good())
+    {
+      std::string line{""};
+      std::string timeStamp{""};
+      double voltage{}, current{}, temperature{};
+      int linecount{1};
+      while(!inFile.eof())
+	{
+	  getline(inFile,line);
+	  if(linecount == 4)
+	    {
+	      line.erase(std::remove(line.begin(), line.end(), 'C'), line.end());
+	      line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+	      std::string tmp = line.substr(line.length() - 5);
+	      data.temperature = std::stod(tmp);
+	      data.etemperature = 0.1;	      
+	    }
+	  else if(linecount >= 18)
+	    {
+	      //std::cout << line << std::endl;
+	      stringstream ssdata(line);
+	      ssdata >> timeStamp >> voltage >> current;
+	      //std ::cout << timeStamp << "\t" << voltage << "\t" << current << std::endl;
+	      Voltage.push_back(voltage);
+	      Current.push_back(current);
+	    }  
+	  ++linecount;
+	}
+    }
+  inFile.close();
+  int n{0};
+  for(int i{0}; i<=Voltage.size(); ++i)
+    {
+      if(n != 5){++n;}
+      else if(n == 5)
+	{
+	  n = 1;
+	  double voltageav{(Voltage[i-1] + Voltage[i-2] + Voltage[i-3] + Voltage[i-4] +Voltage[i-5])/5.};
+	  data.voltage.push_back(voltageav);
+	  data.evoltage.push_back(0.05);
+	  
+	  double currentMean = (Current[i-1] + Current[i-2] + Current[i-3] + Current[i-4] +Current[i-5])/5.;
+	  data.current.push_back(currentMean);
+	  double ecurrentMean{StdDev(Current[i-1],Current[i-2],Current[i-3],Current[i-4],Current[i-5],currentMean)};
+	  data.ecurrent.push_back(ecurrentMean);
+
+	  data.currentupper.push_back(currentMean + ecurrentMean);
+	  data.currentlower.push_back(currentMean - ecurrentMean);
+	  std::cout << data.currentupper[0] << "\t" << data.currentlower[0] << std::endl;
+	}
+    }      
+ 
+return data;
+}
+
+void LeakageFluctuation()
+{
+  DiodeFluence Fluences = GetFluences();
+
+  for(int i{25}; i<=48; ++i)
+    {
+      Data IrradData = GetFile(i,"Irrad");
+      Data UnirradData = GetFile(i, "Unirrad");      
+    }
+}
