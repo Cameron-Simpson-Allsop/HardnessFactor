@@ -226,11 +226,13 @@ void LeakageFluctuation()
       mgunirrad->Draw("AP");
       canvas->cd(3);
       diff->Draw("AP");
+      TString filename = "Diode" + std::to_string(i) + "_CurrentFluctuation.pdf"; 
+      canvas->SaveAs(filename);
       }
       double tmpdiffs = 0;
       double sumSquares = 0;
       int n1 = 0;
-      std::vector<double>::iterator it2 = std::find(IrradData.voltage.begin(), IrradData.voltage.end(), -130);
+      std::vector<double>::iterator it2 = std::find(IrradData.voltage.begin(), IrradData.voltage.end(), -100);
       std::vector<double>::iterator it1 = std::find(IrradData.voltage.begin(), IrradData.voltage.end(), -40);
       int index2 = std::distance(IrradData.voltage.begin(), it2);
       int index1 = std::distance(IrradData.voltage.begin(), it1);
@@ -257,25 +259,26 @@ void LeakageFluctuation()
     }
   TGraphErrors *FluencevDiff = new TGraphErrors(fluences.size(), &(fluences[0]), &(diffs[0]), &(efluences[0]), &(ediffs[0]));
   FluencevDiff->GetXaxis()->SetTitle("Fluence (p/cm^2)");
-  FluencevDiff->GetYaxis()->SetTitle("Irrad Current Fluctuation (A)");
+  FluencevDiff->GetYaxis()->SetTitle("Average Irrad Current Fluctuation (A)");
   FluencevDiff->SetMarkerStyle(20);
+  FluencevDiff->GetYaxis()->SetTitleOffset(1.3);
 
   TGraphErrors *FluencevDiffcut = new TGraphErrors(fluences.size(), &(fluences[0]), &(diffs[0]), &(efluences[0]), &(ediffs[0]));
   FluencevDiffcut->GetXaxis()->SetTitle("Fluence (p/cm^2)");
-  FluencevDiffcut->GetYaxis()->SetTitle("Irrad Current Fluctuation (A)");
+  FluencevDiffcut->GetYaxis()->SetTitle("Average Irrad Current Fluctuation (A)");
   FluencevDiffcut->SetMarkerStyle(20);
   
-  TCanvas *can = new TCanvas("Fluence vs Irradiated Leakage Current Fluctuation","Fluence v Irradiated Leakage Current Fluctuation",600,600);
+  TCanvas *can = new TCanvas("Fluence vs Average Irradiated Leakage Current Fluctuation","Fluence v Average Irradiated Leakage Current Fluctuation",600,600);
   can->SetTopMargin(0.08);
   can->SetRightMargin(0.12);
   FluencevDiff->Draw("AP");
-  can->SaveAs("Fluence_vs_Fluctuation.pdf");
-  TCanvas *can1 = new TCanvas("Fluence vs Irradiated Leakage Current Fluctuation (cut)","Fluence v Irradiated Leakage Current Fluctuation (cut)",600,600);
-  FluencevDiffcut->GetXaxis()->SetRangeUser(0,3.3e12);
+  can->SaveAs("Fluence_vs_Average_Fluctuation.pdf");
+  TCanvas *can1 = new TCanvas("Fluence vs Average Irradiated Leakage Current Fluctuation (cut)","Fluence v Average Irradiated Leakage Current Fluctuation (cut)",600,600);
+  FluencevDiffcut->GetXaxis()->SetRangeUser(0,5.5e12);
   FluencevDiffcut->GetYaxis()->SetRangeUser(2e-8,6e-8);
   TGaxis::SetMaxDigits(3);
   can1->SetTopMargin(0.08);
   can1->SetRightMargin(0.12);
   FluencevDiffcut->Draw("AP");
-  can1->SaveAs("Fluence_vs_Fluctuation_cut.pdf");
+  can1->SaveAs("Fluence_vs_Average_Fluctuation_cut.pdf");
 }
