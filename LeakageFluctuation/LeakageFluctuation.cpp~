@@ -60,6 +60,15 @@ double StdDev(double c1, double c2, double c3, double c4, double c5, double mean
   return pow(sumSquares/4.,0.5); 
 }
 
+double TempScale(double current, double T)
+{
+  double Ea = 1.21; //eV
+  double kb = 8.6173e-1; //eVK^-1
+  double Tr = 273+21; //K
+  double exponent = -(Ea/(2*kb))*((1/Tr)-(1/T));
+  return current*pow((Tr/T),2)*exp(exponent);
+}
+
 Data GetFile(int DiodeNumber, std::string irradstate)
 {
   ifstream inFile;
@@ -116,26 +125,82 @@ Data GetFile(int DiodeNumber, std::string irradstate)
 	  data.evoltage.push_back(0.05);
 	  
 	  double currentMean = (Current[i-1] + Current[i-2] + Current[i-3] + Current[i-4] +Current[i-5])/5.;
-	  data.current.push_back(currentMean);
+	  data.current.push_back(TempScale(currentMean,data.temperature));
 	  double ecurrentMean{StdDev(Current[i-1],Current[i-2],Current[i-3],Current[i-4],Current[i-5],currentMean)};
-	  data.ecurrent.push_back(ecurrentMean);
+	  data.ecurrent.push_back((TempScale(currentMean,data.temperature)/currentMean)*ecurrentMean);
 
-	  data.currentupper.push_back(currentMean + ecurrentMean);
-	  data.currentlower.push_back(currentMean - ecurrentMean);
-	  std::cout << data.currentupper[0] << "\t" << data.currentlower[0] << std::endl;
+	  data.currentupper.push_back(TempScale(currentMean,data.temperature)+(TempScale(currentMean,data.temperature)/currentMean)*ecurrentMean);
+	  data.currentlower.push_back(TempScale(currentMean,data.temperature)-(TempScale(currentMean,data.temperature)/currentMean)*ecurrentMean);
 	}
+      
     }      
- 
-return data;
+  
+  return data;
+}
+void MgSettings(TMultiGraph *g)
+{ 
+  g->GetXaxis()->SetTitle("Voltage (V)");
+  g->GetYaxis()->SetTitle("Current (A)");
+}
+void GraphSettings(TGraph *g, std::string color)
+{
+  g->GetXaxis()->SetTitle("Voltage (V)");
+  g->GetYaxis()->SetTitle("Current (A)");
+  g->SetMarkerStyle(1);
+
+  if(color == "red")
+    {
+      g->SetMarkerColor(kRed);
+      g->SetLineColor(kRed);
+    }
+  else if(color == "blue")
+    {
+      g->SetMarkerColor(kBlue);
+      g->SetLineColor(kBlue);
+    }
+  else
+    {
+      std::cout << "Error specifying graph colors..." << std::endl;
+    }
 }
 
 void LeakageFluctuation()
 {
+  rootlogonATLAS();
   DiodeFluence Fluences = GetFluences();
 
   for(int i{25}; i<=48; ++i)
     {
       Data IrradData = GetFile(i,"Irrad");
-      Data UnirradData = GetFile(i, "Unirrad");      
+      Data UnirradData = GetFile(i, "Unirrad");
+
+      TString cantitle = "Diode " + std::to_string(i);
+      
+      TGraph *irradupper = new TGraph(IrradData.voltage.size(), &(IrradData.voltage[0]), &(IrradData.currentupper[0]));
+      TGraph *irradlower = new TGraph(IrradData.voltage.size(), &(IrradData.voltage[0]), &(IrradData.currentlower[0]));
+      TGraph *unirradupper = new TGraph(UnirradData.voltage.size(), &(UnirradData.voltage[0]), &(UnirradData.currentupper[0]));
+      TGraph *unirradlower = new TGraph(UnirradData.voltage.size(), &(UnirradData.voltage[0]), &(UnirradData.currentlower[0]));
+
+      GraphSettings(irradupper,"blue"); GraphSettings(irradlower,"red"); GraphSettings(unirradupper,"blue"); GraphSettings(unirradlower,"red");
+
+      TMultiGraph *mgirrad = new TMultiGraph();
+      MgSettings(mgirrad);
+      mgirrad->Add(irradupper,"lp");
+      mgirrad->Add(irradlower,"lp");
+
+      TMultiGraph *mgunirrad = new TMultiGraph();
+      MgSettings(mgunirrad);
+      mgunirrad->Add(unirradupper,"lp");
+      mgunirrad->Add(unirradlower,"lp");
+
+      if(i==38||i==48)
+	{
+	  TCanvas *canvas = new TCanvas(cantitle, cantitle, 600, 600);
+	  canvas->Divide(1,2);
+	  canvas->cd(1);
+	  mgirrad->Draw("AP");
+	  canvas->cd(2);
+	  mgunirrad->Draw("AP");
+	}
     }
 }

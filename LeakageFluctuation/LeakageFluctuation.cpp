@@ -40,12 +40,15 @@ DiodeFluence GetFluences()
     }
   std::string line{""};
   getline(inFile,line);
+  std::cout << "======================================================================================================" << std::endl;
+  std::cout << "Diode" << "\t" << "Fluence (p/cm^2)" << "\t" << "Fluence Error (p/cm^2)" << "\t" << "MaxDep (V)" << std::endl;
+  std::cout << "======================================================================================================" << std::endl;
   while(!inFile.eof())
     {
       int DiodeNumber;
       double Fluence, eFluence, MaxDep;
       inFile >> DiodeNumber >> Fluence >> eFluence >> MaxDep;
-      //std::cout << "\t" << DiodeNumber << "\t" << Fluence << "\t" << eFluence << "\t" << MaxDep << std::endl;
+      std::cout << "\t" << DiodeNumber << "\t" << Fluence << " \t" << eFluence << "\t\t\t" << MaxDep << std::endl;
       diode.DiodeNumber.push_back(DiodeNumber);
       diode.DiodeFluence.push_back(Fluence);
       diode.eDiodeFluence.push_back(eFluence);
@@ -168,12 +171,24 @@ void LeakageFluctuation()
 {
   rootlogonATLAS();
   DiodeFluence Fluences = GetFluences();
-
+  std::vector<double> diffs;
+  std::vector<double> ediffs;
+  std::vector<double> fluences;
+  std::vector<double> efluences;
+  
   for(int i{25}; i<=48; ++i)
     {
       Data IrradData = GetFile(i,"Irrad");
       Data UnirradData = GetFile(i, "Unirrad");
+      std::vector<double> irradDiff;
+      std::vector<double> unirradDiff;
 
+      for(int n{0}; n<IrradData.voltage.size(); ++n)
+      	{
+      	  irradDiff.push_back(IrradData.currentupper[n]-IrradData.currentlower[n]);
+	  unirradDiff.push_back(UnirradData.currentupper[n]-UnirradData.currentlower[n]);	  
+     	}
+      
       TString cantitle = "Diode " + std::to_string(i);
       
       TGraph *irradupper = new TGraph(IrradData.voltage.size(), &(IrradData.voltage[0]), &(IrradData.currentupper[0]));
@@ -181,7 +196,10 @@ void LeakageFluctuation()
       TGraph *unirradupper = new TGraph(UnirradData.voltage.size(), &(UnirradData.voltage[0]), &(UnirradData.currentupper[0]));
       TGraph *unirradlower = new TGraph(UnirradData.voltage.size(), &(UnirradData.voltage[0]), &(UnirradData.currentlower[0]));
 
-      GraphSettings(irradupper,"blue"); GraphSettings(irradlower,"red"); GraphSettings(unirradupper,"blue"); GraphSettings(unirradlower,"red");
+      TGraph *irraddiff = new TGraph(IrradData.voltage.size(), &(IrradData.voltage[0]), &(irradDiff[0]));
+      TGraph *unirraddiff = new TGraph(UnirradData.voltage.size(), &(UnirradData.voltage[0]), &(unirradDiff[0]));
+      
+      GraphSettings(irradupper,"blue"); GraphSettings(irradlower,"blue"); GraphSettings(unirradupper,"red"); GraphSettings(unirradlower,"red"); GraphSettings(irraddiff,"blue"); GraphSettings(unirraddiff,"red");
 
       TMultiGraph *mgirrad = new TMultiGraph();
       MgSettings(mgirrad);
@@ -193,14 +211,71 @@ void LeakageFluctuation()
       mgunirrad->Add(unirradupper,"lp");
       mgunirrad->Add(unirradlower,"lp");
 
-      if(i==38||i==48)
+      TMultiGraph *diff = new TMultiGraph();
+      MgSettings(diff);
+      diff->Add(irraddiff,"lp");
+      diff->Add(unirraddiff,"lp");
+
+      if(i==37||i==38||i==47||i==48)
+      {
+      TCanvas *canvas = new TCanvas(cantitle, cantitle, 600, 600);
+      canvas->Divide(1,3);
+      canvas->cd(1);
+      mgirrad->Draw("AP");
+      canvas->cd(2);
+      mgunirrad->Draw("AP");
+      canvas->cd(3);
+      diff->Draw("AP");
+      }
+      double tmpdiffs = 0;
+      double sumSquares = 0;
+      int n1 = 0;
+      std::vector<double>::iterator it2 = std::find(IrradData.voltage.begin(), IrradData.voltage.end(), -130);
+      std::vector<double>::iterator it1 = std::find(IrradData.voltage.begin(), IrradData.voltage.end(), -40);
+      int index2 = std::distance(IrradData.voltage.begin(), it2);
+      int index1 = std::distance(IrradData.voltage.begin(), it1);
+      for(int n{index1}; n<=index2; ++n)
 	{
-	  TCanvas *canvas = new TCanvas(cantitle, cantitle, 600, 600);
-	  canvas->Divide(1,2);
-	  canvas->cd(1);
-	  mgirrad->Draw("AP");
-	  canvas->cd(2);
-	  mgunirrad->Draw("AP");
+	  tmpdiffs += irradDiff[n];
+	  n1 = n+1-index1;
 	}
+      for(int n{index1}; n<=index2; ++n)
+	{
+	  sumSquares = pow(irradDiff[n]-tmpdiffs/n1,2);
+	}
+      diffs.push_back(tmpdiffs/n1);
+      ediffs.push_back(pow(sumSquares/(n1-1),0.5));
+      fluences.push_back(Fluences.DiodeFluence[i-25]);
+      efluences.push_back(Fluences.eDiodeFluence[i-25]);
+      if(i==25)
+	{
+	  std::cout << "======================================================================================================" << std::endl;
+	  std::cout << "Diode" << "\t\t" << "Fluence (p/cm^2)" << "\t\t" << "Irrad Current Fluctuation (A)" << std::endl;
+	  std::cout << "======================================================================================================" << std::endl;
+	}
+      std::cout << i << "\t\t" << fluences[i-25] << " +/- " << efluences[i-25] << "\t\t" << diffs[i-25] << " +/- " << ediffs[i-25] << std::endl;
     }
+  TGraphErrors *FluencevDiff = new TGraphErrors(fluences.size(), &(fluences[0]), &(diffs[0]), &(efluences[0]), &(ediffs[0]));
+  FluencevDiff->GetXaxis()->SetTitle("Fluence (p/cm^2)");
+  FluencevDiff->GetYaxis()->SetTitle("Irrad Current Fluctuation (A)");
+  FluencevDiff->SetMarkerStyle(20);
+
+  TGraphErrors *FluencevDiffcut = new TGraphErrors(fluences.size(), &(fluences[0]), &(diffs[0]), &(efluences[0]), &(ediffs[0]));
+  FluencevDiffcut->GetXaxis()->SetTitle("Fluence (p/cm^2)");
+  FluencevDiffcut->GetYaxis()->SetTitle("Irrad Current Fluctuation (A)");
+  FluencevDiffcut->SetMarkerStyle(20);
+  
+  TCanvas *can = new TCanvas("Fluence vs Irradiated Leakage Current Fluctuation","Fluence v Irradiated Leakage Current Fluctuation",600,600);
+  can->SetTopMargin(0.08);
+  can->SetRightMargin(0.12);
+  FluencevDiff->Draw("AP");
+  can->SaveAs("Fluence_vs_Fluctuation.pdf");
+  TCanvas *can1 = new TCanvas("Fluence vs Irradiated Leakage Current Fluctuation (cut)","Fluence v Irradiated Leakage Current Fluctuation (cut)",600,600);
+  FluencevDiffcut->GetXaxis()->SetRangeUser(0,3.3e12);
+  FluencevDiffcut->GetYaxis()->SetRangeUser(2e-8,6e-8);
+  TGaxis::SetMaxDigits(3);
+  can1->SetTopMargin(0.08);
+  can1->SetRightMargin(0.12);
+  FluencevDiffcut->Draw("AP");
+  can1->SaveAs("Fluence_vs_Fluctuation_cut.pdf");
 }

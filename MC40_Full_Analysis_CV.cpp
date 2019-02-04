@@ -187,13 +187,13 @@ void Evaluate_MC40()
     }
   std::vector<double> voltage;
   std::string line{""};
-  double DiodeNumber, tmpFluence, MaxDepVolt;
+  double DiodeNumber, tmpFluence, etmpFluence, MaxDepVolt;
   getline(maxdeps,line);
   while(!maxdeps.eof())
     {
       getline(maxdeps,line);
       stringstream ss(line);
-      ss >> DiodeNumber >> tmpFluence >> MaxDepVolt;
+      ss >> DiodeNumber >> tmpFluence >> etmpFluence >> MaxDepVolt;
       std::cout << DiodeNumber << "\t" << tmpFluence << "\t" << MaxDepVolt << std::endl;
       voltage.push_back(MaxDepVolt);
 
