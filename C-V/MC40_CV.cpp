@@ -209,7 +209,7 @@ void MC40_CV()
     }
   else if(maxdeps.good())
     {
-      maxdeps << "Diode Number" << "\t" << "Fluence (p/cm^2)" << "\t" << "Max Depletion Voltage (V)" << std::endl;
+      maxdeps << "Diode Number" << "\t" << "Fluence (p/cm^2)" << "\t" << "eFluence (p/cm^2)" << "\t"  << "Max Depletion Voltage (V)" << std::endl;
       for(int i{25}; i<=48; ++i)
 	{  
 	  std::string filePath = "Diode" + std::to_string(i) + "_CV_" + irradstate + ".txt";
@@ -217,7 +217,7 @@ void MC40_CV()
 	  Data data = ReadFile(filePath, fileHeaderStart);
 	  TString graphTitle = "Diode " + std::to_string(i);
 	  double depvolt = MaxDep(data, graphTitle, i, irradstate);
-	  maxdeps << i << "\t" << data.Fluence << "\t" << depvolt << std::endl;
+	  maxdeps << i << "\t" << data.Fluence << "\t" << data.eFluence << "\t" << depvolt << std::endl;
 	  maxdep.push_back(depvolt);
 	  fluence.push_back(data.Fluence);
 	}
