@@ -1,0 +1,38 @@
+#include <iostream>
+#include <rootlogonATLAS.h>
+
+void GraphSettings(TMultiGraph *g)
+{
+  g->SetTitle("");
+  g->GetXaxis()->SetTitle("V [V]");
+  g->GetXaxis()->SetTitle("I [nA]");
+  g->SetMarkerStyle(20);
+}
+
+void OverlayIV()
+{
+  TGraphErrors *unirrad = new TGraphErrors("Diode46_IV_2802.txt");
+  unirrad->SetMarkerColor(kRed);
+  unirrad->SetLineColor(kRed);
+
+  TGraphErrors *irrad = new TGraphErrors("Diode46_IV_irradiated_0603.txt");
+  irrad->SetMarkerColor(kBlue);
+  irrad->SetLineColor(kBlue);
+  
+  TMultiGraph *mg = new TMultiGraph();
+  GraphSettings(mg);
+  mg->Add(unirrad,"p");
+  mg->Add(irrad,"p");
+
+  TLegend *leg = new TLegend(0.1,0.1,0.25,0.25);
+  leg->SetBorderSize(0);
+  leg->SetFillColor(0);
+  leg->SetTextSize(0.02);
+  leg->SetFillStyle(1000);
+  leg->SetTextFont(42);
+  leg->SetNColumns(1);
+
+  TCanvas *can = new TCanvas("OverlayIV","OverlayIV",600,600);
+  leg->AddEntry(unirrad,"Unirradiated","lp");
+  leg->AddEntry(unirrad,"Irradiated 4.33x10^{11} p/cm^{2}","lp");
+}

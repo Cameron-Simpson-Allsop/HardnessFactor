@@ -5,6 +5,7 @@
 #include "TString.h"
 #include "iostream"
 #include "rootlogonATLAS.h"
+#include <fstream>
 
 //Define 'Current' structure
 struct Current{
@@ -72,8 +73,8 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   g->SetMarkerSize(3);
   g->GetYaxis()->SetRangeUser(0,1e3);
   g->GetXaxis()->SetRangeUser(0,6e12);
-  g->GetXaxis()->SetTitle("Fluence (pcm^{-2})");
-  g->GetYaxis()->SetTitle("Change in Leakage Current (-nA)");
+  g->GetXaxis()->SetTitle("#phi (pcm^{-2})");
+  g->GetYaxis()->SetTitle("|#Delta I| (-nA)");
   g->SetTitle("");
   TGaxis::SetMaxDigits(3);
 
@@ -89,9 +90,13 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   fit1->SetLineColor(kBlack);
   fit1->SetLineStyle(9);
 
-  g->Fit(fit,"RN");
-  g->Fit(fit1,"RN");
-   
+  g->Fit(fit,"RNE");
+  std::cout << "**********************************************************************" <<std::endl;
+  TFitResultPtr result=g->Fit(fit1,"SRNE");
+  std::cout << "**********************************************************************" <<std::endl;
+  result->Print();
+
+  
   TLegend* leg = new TLegend(0.2, 0.75, 0.4, 0.85);
   leg->AddEntry(fit,"pol1 fit","l");
   leg->AddEntry(fit1,"[0]*x fit","l");
@@ -126,27 +131,45 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   double ealphan{0.03e-17}; //A cm^-1
 
   //Calculates hardness factor from fit
-  double theta = fit->GetParameter(1); //nA cm^2
-  double etheta = fit->GetParError(1); //pol1 fit
-  double theta1 = fit1->GetParameter(0); //nA cm^2
+  double theta   = fit->GetParameter(1); //nA cm^2
+  double etheta  = fit->GetParError(1); //pol1 fit
+  double theta1  = fit1->GetParameter(0); //nA cm^2
   double etheta1 = fit1->GetParError(0); //force 0 fit
-  double alpha = pow(10,-9)*theta/(l*l*w); //A cm^-1
-  double ealpha = pow(10,-9)*etheta/(l*l*w);
-  double alpha1 = pow(10,-9)*theta1/(l*l*w); //A cm^-1
+  double alpha   = pow(10,-9)*theta/(l*l*w); //A cm^-1
+  double ealpha  = pow(10,-9)*etheta/(l*l*w);
+  double alpha1  = pow(10,-9)*theta1/(l*l*w); //A cm^-1
   double ealpha1 = pow(10,-9)*etheta1/(l*l*w);
-  double k = alpha/alphan;
-  double ek = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
-  double k1 = alpha1/alphan;
+  double k   = alpha/alphan;
+  double ek  = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
+  double k1  = alpha1/alphan;
   double ek1 = pow(pow(ealpha1/alphan,2)+pow((alpha1*ealphan)/(alphan*alphan),2),0.5);
 
   std::cout << "MC40 Alpha (pol1) = " << alpha << " +/- " << ealpha << std::endl;
   std::cout << "MC40 Hardness Factor (pol1) = " << k << " +/- " << ek << std::endl;
-
+  std::cout << "**********************************************************************" <<std::endl;
   std::cout << "MC40 Alpha (force 0) = " << alpha1 << " +/- " << ealpha1 << std::endl;
   std::cout << "MC40 Hardness Factor (force 0) = " << k1 << " +/- " << ek1 << std::endl;
+  std::cout << "**********************************************************************" <<std::endl;
 
   std::cout << "pol1 fit equation: y = (" << theta << " +/- " << etheta << ")x + (" << fit->GetParameter(0) << " +/- " << fit->GetParError(0) << ")" << std::endl;
   std::cout << "force 0 fit equation: y = (" << theta1 << " +/- " << etheta1 << ")x" << std::endl;
+
+  std::string hardnessDatafile = "MC40_results.txt";
+  ofstream hardnessData;
+  hardnessData.open(hardnessDatafile);
+  if(!hardnessData.good())
+    {
+      std::cout<<"Error opening file '"+hardnessDatafile+"'..."<<std::endl;
+    }
+  else if(hardnessData.good())
+    {
+      hardnessData << "Fluence [p/cm^2]\tDelta I [nA]\teFluence [p/cm^2]\teDelta I [nA]"<< std::endl;
+      for(int i{0}; i<x.size(); ++i)
+	{
+	  hardnessData << x[i] << "\t" << y[i] << "\t" << ex[i] << "\t" << ey[i] << std::endl;
+	}
+    }
+  hardnessData.close();
   
 }
 
@@ -223,7 +246,6 @@ void Evaluate_MC40()
   
   Extract_Hardness_Factor(I_MC40_combined);
   maxdeps.close();
-
 }
 
 void MC40_Full_Analysis_CV()

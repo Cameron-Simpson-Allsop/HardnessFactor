@@ -1,0 +1,178 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cmath>
+
+#include "TGraphErrors.h"
+
+struct Data
+{
+  std::vector<double> fluences;
+  std::vector<double> currents;
+  std::vector<double> efluences;
+  std::vector<double> ecurrents;
+  std::vector<double> ecurrentrel;
+  std::vector<double> efluencerel;
+  std::vector<double> point;
+};
+
+void CurrentError(Data data)
+{
+  int npoints = 100;
+  for(int i{0}; i<npoints; ++i)
+    {
+      
+      
+    }
+}
+
+void ExtrapolateData(double grad, double egrad, double efluencerel, double ecurrentconst)
+{
+  int Ndiodes = 10;
+  int Ntrials = 2;
+  double K=2.2;
+  double multiplier = 1.e8;
+  std::vector<double> fluence,current,efluence,ecurrent,dummy;
+  std::vector<double> fluenceIter, efluenceIter;
+
+  fluence.push_back(1.*multiplier);
+  fluence.push_back(2.*multiplier);
+  fluence.push_back(3.*multiplier);
+  fluence.push_back(4.*multiplier);
+  fluence.push_back(5.*multiplier);
+  fluence.push_back(6.*multiplier);
+  fluence.push_back(7.*multiplier);
+  fluence.push_back(8.*multiplier);
+  fluence.push_back(9.*multiplier);
+  fluence.push_back(10.*multiplier);
+
+
+
+  TF1 *fit = new TF1("fit","pol1",0.,1.e12);
+  fit->FixParameter(0,0.);
+  fit->SetParameter(1,5e-11);
+  TH1F*hextrap=new TH1F("hextrap","",200, 0.,2.);
+  TRandom *rndm = new TRandom3(0);
+  //for(int n{0}; n<Ntrials; ++n)
+    {
+      std::cout << " *** TRIAL ***"<<std::endl;
+      double alphafluence = rndm->Gaus(1.,efluencerel);
+      for(int i{0}; i<Ndiodes; ++i)
+	{
+	  fluenceIter.push_back(fluence[i]);
+	  efluenceIter.push_back(0.);
+	  current.push_back(grad*fluence[i]/K);
+	  ecurrent.push_back(0.08);//grad*fluence[i]/K*ecurrentconst);
+	  dummy.push_back(0);
+	}
+      TGraphErrors *g = new TGraphErrors(fluenceIter.size(),&(fluenceIter[0]),&(current[0]),&(dummy[0]),&(ecurrent[0]));
+      TFitResultPtr result = g->Fit(fit,"SRE");
+      TCanvas*c0=new TCanvas("c0","",600,600);
+      g->SetMarkerStyle(20);
+      g->Draw("AP");
+      return;
+      // TCanvas *can = new TCanvas("Data_Extrapolation","Data_Extrapolation",600,600);
+      // g->Draw("AP");
+      // fit->Draw("same");
+      // std::cout<<"Fit equation (extrapolated for neutrons): y = ("<<fit->GetParameter(1)*1.e10<<" +/- "<<fit->GetParError(1)*1.e10<<")e-10*x"<<std::endl;
+      hextrap->Fill(fit->GetParameter(1)*1.e10);
+      delete g;      
+      fluenceIter.clear();
+      efluenceIter.clear();
+      current.clear();
+      ecurrent.clear();
+    }
+  TCanvas*c=new TCanvas("Extrap","Extrapolated_Gradient",600,600);
+  hextrap->GetXaxis()->SetTitle("Fit Gradient (1 MeV neutrons)");
+  hextrap->Fit("gaus");
+  std::cout<<"Fit equation (extrapolated for neutrons): y = ("<<hextrap->GetMean()<<" +/- "<<hextrap->GetStdDev()<<")e-10*x"<<std::endl;
+
+}
+
+void MC40_sim_for_athens()
+{
+  Data measured;
+  ifstream MC40;
+  std::string line{""};
+  double x,y,ex,ey;
+  std::vector<double> dummy, fluenceIter, currentIter;
+  MC40.open("MC40_results.txt");
+  int i{0};
+  if(MC40.good())
+    {
+      getline(MC40,line);
+      while(true)
+	{	  
+	  MC40>>x>>y>>ex>>ey;
+	  if(MC40.eof())break;
+	  measured.fluences.push_back(x);
+	  measured.currents.push_back(y);
+	  measured.efluences.push_back(ex);
+	  measured.ecurrents.push_back(ey);
+	  measured.efluencerel.push_back(ex/x);
+	  measured.ecurrentrel.push_back(ey/y);
+	  measured.point.push_back(i);
+	  dummy.push_back(0.);
+	  //std::cout<< x<< " " <<y<<std::endl;
+	  ++i;
+	}
+    }
+  else std::cout<<"Error opening file..."<<std::endl;
+  MC40.close();
+
+  
+  TF1* fit1 = new TF1("fit1","pol1",0,6e12);
+  fit1->SetParameters(0., 5e-11);
+  fit1->FixParameter(0,0.);
+
+  TRandom*rndm=new TRandom3(0);
+  TH1F*hres=new TH1F("hres","",200, 0.,4);
+  for(int iIter=0;iIter<50000;iIter++)
+    {
+
+      // correlated fluence uncertainties
+      // uncorrelated current uncertainties
+      double alphaFluence = rndm->Gaus(1.,0.17);
+      for(unsigned int k=0;k<measured.fluences.size();k++)
+	{
+	  fluenceIter.push_back(measured.fluences[k]*alphaFluence);
+	  currentIter.push_back(measured.currents[k]*rndm->Gaus(1.,measured.ecurrents[k]/measured.currents[k]));
+	}
+
+      TGraphErrors *g = new TGraphErrors(measured.fluences.size(),
+					 &(fluenceIter[0]), 
+					 &(currentIter[0]), 
+					 &(dummy[0]),
+					 &(measured.ecurrents[0]));
+
+      TFitResultPtr result=g->Fit(fit1,"SQRNE");
+      //std::cout<< fit1->GetParameter(1)<<std::endl;
+      hres->Fill(fit1->GetParameter(1)*1.e10);
+      //result->Print();
+      delete g;
+      fluenceIter.clear();
+      currentIter.clear();
+    }
+  TCanvas*c=new TCanvas("c","Fit_Gradient",600,600);
+  hres->GetXaxis()->SetTitle("Fit Gradient 25 MeV protons");
+  hres->Fit("gaus");
+  std::cout<<"Fit equation: y = ("<<hres->GetMean()<<" +/- "<<hres->GetStdDev()<<")e-10*x"<<std::endl;
+
+  TGraph *fluencerel = new TGraph(measured.point.size(),&(measured.point[0]),&(measured.efluencerel[0]));
+  fluencerel->SetMarkerStyle(20);
+  fluencerel->GetYaxis()->SetTitle("Relative Fluence Error");
+  fluencerel->SetTitle("");
+  TGraph *currentrel = new TGraph(measured.point.size(),&(measured.point[0]),&(measured.ecurrentrel[0]));
+  currentrel->SetMarkerStyle(20);
+  currentrel->GetYaxis()->SetTitle("Relative Current Error");
+  currentrel->SetTitle("");
+  TCanvas *can = new TCanvas("can","Relative_Errors",600,600);
+  can->Divide(1,2);
+  can->cd(1);
+  fluencerel->Draw("AP");
+  can->cd(2);
+  currentrel->Draw("AP");
+
+  CurrentError(measured);
+  ExtrapolateData(hres->GetMean()*1.e-10, hres->GetStdDev()*1.e-10, 0.17, 0.05);
+}

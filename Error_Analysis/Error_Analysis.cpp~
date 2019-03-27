@@ -1,0 +1,94 @@
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <algorithm>
+
+struct Data
+{
+  std::vector<double> fluence; //p/cm^2
+  std::vector<double> current; //nA
+  std::vector<double> efluence;
+  std::vector<double> ecurrent;
+  std::vector<double> kappa;
+  std::vector<double> ekappa;
+};
+
+double StdDev(std::vector<double> v, double mean)
+{
+  double sqsum{0.};
+  for(int i{0}; i<v.size(); ++i)
+    {
+      sqsum += pow(v[i]-mean,2);
+    }
+  return pow(sqsum/(v.size()-1.),0.5);
+}
+
+void Error_Analysis()
+{
+  Data data;
+  ifstream inFile;
+  inFile.open("MC40_results.txt");
+  std::string line{""};
+  double fluence,current,efluence,ecurrent;
+  getline(inFile,line);
+  while(true)
+    {
+      getline(inFile,line);
+      if(inFile.eof()){break;}
+      stringstream ss(line);
+      ss>>fluence>>current>>efluence>>ecurrent;
+      data.fluence.push_back(fluence);
+      data.current.push_back(current);
+      data.efluence.push_back(efluence);
+      data.ecurrent.push_back(ecurrent);
+    }
+
+  TH1F *hardness = new TH1F("Hardness Factor",";Hardness Factor value;Counts",100,1.6,2.7);
+  
+  int Ntrials = 50000;
+  TRandom2 *rndm = new TRandom2();
+  //Sensor parameters
+  double l{0.265}; //p cm^2
+  double w{0.03}; //cm
+  double alphan{3.99e-17}; //A cm^-1
+  double ealphan{0.03e-17}; //A cm^-1
+  for(int i{0}; i<Ntrials; ++i)
+    {
+      std::vector<double> tmpfluence,tmpcurrent;
+      for(int n{0}; n<data.fluence.size(); ++n)
+	{
+	  tmpfluence.push_back(rndm->Gaus(data.fluence[n],data.efluence[n]));
+	  tmpcurrent.push_back(rndm->Gaus(data.current[n],data.ecurrent[n]));
+	}
+      TGraphErrors *gtmp = new TGraphErrors(tmpfluence.size(),&(tmpfluence[0]),&(tmpcurrent[0]),&(data.efluence[0]),&(data.ecurrent[0]));
+      TF1 *tmpfit = new TF1("tmpfit","pol1",0,6e12);
+      tmpfit->SetParameter(1,5e-11);
+      tmpfit->SetParameter(0,0);
+      gtmp->Fit(tmpfit,"QRN");
+
+      //Calculates hardness factor from fit
+      double theta = tmpfit->GetParameter(1); //nA cm^2
+      double etheta = tmpfit->GetParError(1); //pol1 fit
+      double alpha = pow(10,-9)*theta/(l*l*w); //A cm^-1
+      double ealpha = pow(10,-9)*etheta/(l*l*w);
+      double k = alpha/alphan;
+      double ek = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
+
+      data.kappa.push_back(k);
+      data.ekappa.push_back(ek);
+      hardness->Fill(k);
+    }
+
+  double kappaAv = std::accumulate(data.kappa.begin(),data.kappa.end(),0.)/data.kappa.size();
+  double ekappaAv = StdDev(data.kappa,kappaAv);
+  double Avekappa = std::accumulate(data.ekappa.begin(),data.ekappa.end(),0.)/data.kappa.size();
+  double eAvekappa = StdDev(data.ekappa,Avekappa);
+  
+  std::cout<<"Average hardness factor value: "<<kappaAv<<" +/- "<<ekappaAv<<std::endl;
+  std::cout<<"Average uncertainty: "<<Avekappa<<" +/- "<<eAvekappa<<std::endl<<std::endl;
+
+  std::cout<<"Uncertainty on the hardness factor value is taken as the stdev of "<<Ntrials<<" hardness factor values, generated via monte carlo.\n\nThe average uncertainty is taken as the average of the fit uncertainties for each hardness factor value. The uncertainty on this value is the stdev of these uncertainties."<<std::endl;
+
+  hardness->Draw();
+  hardness->Fit("gaus");
+}

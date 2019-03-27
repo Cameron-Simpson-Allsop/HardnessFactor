@@ -49,6 +49,7 @@ struct errors
 void MC40_Fit_Sim()
 {
   //rootlogonATLAS();
+  std::string line{""};
   double fluence, efluence, current, ecurrent;
   double sumFracFluenceError{0};
   double sumFracCurrentError{0};
@@ -68,6 +69,7 @@ void MC40_Fit_Sim()
   if(!MC40.good()) 
     { std::cout << "Error opening file" << std::endl; }
   else
+    getline(MC40,line);
     while(!MC40.eof())
       {
 	MC40 >> fluence >> current >> efluence >> ecurrent;
