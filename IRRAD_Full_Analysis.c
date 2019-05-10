@@ -68,9 +68,9 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   TGraphErrors *g = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
   g->SetMarkerColor(kBlack);
   g->SetMarkerStyle(20);
-  g->SetMarkerSize(3);
-  g->GetXaxis()->SetTitle("#phi (pcm^{-2})");
-  g->GetYaxis()->SetTitle("| #Delta I | (-nA)");
+  g->SetMarkerSize(2);
+  g->GetXaxis()->SetTitle("#phi [pcm^{-2}]");
+  g->GetYaxis()->SetTitle("|#Delta I| [nA]");
   g->GetXaxis()->SetRangeUser(-1.e12,120.e12);
   g->GetYaxis()->SetRangeUser(-0.1e3,7e3);
   g->SetTitle("");
@@ -102,7 +102,9 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   //Draws plot and fit
   TCanvas *Fluence = new TCanvas("IRRAD Current v Fluence","IRRAD Current v Fluence",600,700);
   Fluence->SetRightMargin(1);
+  Fluence->SetRightMargin(0.12);
   Fluence->SetTopMargin(1);
+  g->GetYaxis()->SetTitleOffset(1.3);
   TGaxis::SetMaxDigits(3);
   g->Draw("AP");
   //fit->Draw("same");
@@ -113,8 +115,10 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   latex.SetNDC();
   latex.SetTextSize(0.04);
   // latex.DrawLatex(0.49,0.2,"#kappa_{pol1 fit} = 0.649 #pm 0.024");
-  latex.DrawLatex(0.49,0.25,"#kappa = 0.62 #pm 0.02");
+  latex.DrawLatex(0.55,0.3,"#kappa = 0.62 #pm 0.04");
   gPad->RedrawAxis();
+
+  Fluence->SaveAs("IRRAD_results.root");
 
   //Sensor parameters
   double l{0.265}; //p cm^2
@@ -141,6 +145,23 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
 
   std::cout << "IRRAD Alpha (force 0) = " << alpha1 << " +/- " << ealpha1 << std::endl;
   std::cout << "IRRAD Hardness Factor (force 0) = " << k1 << " +/- " << ek1 << std::endl;
+
+  /* std::string hardnessDatafile = "IRRAD_results.txt"; */
+  /* ofstream hardnessData; */
+  /* hardnessData.open(hardnessDatafile); */
+  /* if(!hardnessData.good()) */
+  /*   { */
+  /*     std::cout<<"Error opening file '"+hardnessDatafile+"'..."<<std::endl; */
+  /*   } */
+  /* else if(hardnessData.good()) */
+  /*   { */
+  /*     hardnessData << "Fluence [p/cm^2]\tDelta I [nA]\teFluence [p/cm^2]\teDelta I [nA]"<< std::endl; */
+  /*     for(int i{0}; i<x.size(); ++i) */
+  /* 	{ */
+  /* 	  hardnessData << x[i] << "\t" << y[i] << "\t" << ex[i] << "\t" << ey[i] << std::endl; */
+  /* 	} */
+  /*   } */
+  /* hardnessData.close(); */
   
 }
 

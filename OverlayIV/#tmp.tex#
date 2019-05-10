@@ -1,0 +1,56 @@
+\begin{thebibliography}{99}
+
+\bibitem{LHCLuminosityUpgrade}
+  \textbf{ATLAS Collaboration}, \textit{Letter of Intent for the Phase-II Upgrade of the ATLAS Experiment}, \textbf{Report No.:} LHCC-I-023, CERN-LHCC-2012-022, 2012.
+  
+\bibitem{krakow}
+  \textbf{T. Price}, \textit{Experimental Determination of the Hardness
+Factor for the Birmingham Irradiation Facility}, \textbf{Presented at:} 30\textsuperscript{th} RD50 Workshop, Krakow, 05/06/2017.
+
+\bibitem{Karlsruhe}
+  \textbf{A. Dierlamm}, \textit{Proton Irradiation in Karlsruhe}, \textbf{Presented at:} 16\textsuperscript{th} RD50 Workshop, Barcelona, 01/06/2010.
+  
+\bibitem{MOLLhardness}
+  \textbf{M. Moll, E. Fretwurst, M Kuhnke, G Lindstr\"om}, \textit{Relation between microscopic defects and macroscopic changes in silicon detector properties after hadron irradiation}, \textbf{doi:} https://doi.org/10.1016/S0168-583X(01)00866-7, \textbf{Published in:} Nuclear Instruments and Methods in Physics Research Section B: Beam Interactions with Materials and Atoms, vol. 186, no. 1, 2002.
+
+%\bibitem{RD50}
+%  \textbf{RD50}, \textbf{url:} http://rd50.web.cern.ch/rd50/, visited 20/11/2018.
+
+%\bibitem{MC40intro}
+%  \textbf{P. Allport et al}, \textit{Recent Results and Experience with the Birmingham MC40 Irradiation Facility.}, 14\textsuperscript{th} Topical Seminar on Innovative Particle and Radiation Detectors, \textbf{Published in:} Journal of Instrumentation, March 21, 2017. 
+
+%\bibitem{ps}
+%    \textbf{CERN}, \textit{The Proton Synchrotron.}, \textbf{url:} https://home.cern/science/accelerators/proton-synchrotron, visited 05/03/2019.
+  
+%\bibitem{IrradiationFacilities}
+%  \textbf{C. Vladimir}, \textit{World Irradiation Facilities for Silicon Detectors}, \textbf{doi:} 10.22323/1.227.0026, \textbf{Published in:} PoS, Proceedings, 23rd International Workshop on Vertex Detectors (Vertex 2014): Doksy, Czech Republic, 15-19/09/2014
+  
+%\bibitem{IRRADreport}
+%  \textbf{B. Gkotse, M. Glaser, M. Moll, F. Ravotti}, \textit{IRRAD: The New 24 GeV/c Proton Irradiation Facility at CERN}, \textbf{Published in:} Proceedings, 12th International Topical Meeting on Nuclear Applications of Accelerators (AccApp 2015): Washington, D.C., United States, 10-13/11/2015.
+
+\bibitem{ZAG}
+  \textbf{ZAG Zyklotron AG}, \textbf{url:} http://www.zyklotron-ag.de/en/, \textbf{Visited:} 22/01/2019.
+
+\bibitem{KITsite}
+  \textbf{Karlsruhe Institute of Technology}, \textit{Proton Irradiation}, \textbf{url:} http://www.etp.kit.edu/english/irradiation\_center.php, \textbf{Visited:} 22/01/2019.
+
+\bibitem{ActivationEnergy}
+  \textbf{A. Chilingarov}, \textit{Temperature dependence of the current generated in Si bulk}, \textbf{Published in:} Journal of Instrumentation, vol. 8, no. 10, 2013.
+  
+\bibitem{BPW34F}
+  \textbf{OSRAM Opto Semiconductors}, \textit{Silicon PIN Photodiode with Daylight Blocking Filter Version 1.5: BPW34F}, \textbf{url:} https://www.marutsu.co.jp/contents/shop/marutsu/ds/00215978\_0.pdf, 06/04/2016.
+  
+\bibitem{Ravotti}
+  \textbf{F. Ravotti et al}, \textit{BPW34 Commercial p-i-n Diodes for High-level 1-MeV Neutron Equivalent Fluence Monitoring}, \textbf{Published in:} 9th European Conference on Radiation and Its Effects on Components and Systems, 2007.
+  
+\bibitem{Moll}
+  \textbf{M. Moll}, \textit{Radiation Damage in Silicon Particle Detectors}, University of Hamburg, 1999.
+  
+% Please avoid comments such as "For a review'', "For some examples",
+% "and references therein" or move them in the text. In general,
+% please leave only references in the bibliography and move all
+% accessory text in footnotes.
+
+% Also, please have only one work for each \bibitem.
+
+\end{thebibliography}

@@ -18,7 +18,8 @@ struct Current{
 //Calibration ratio and systematic fluence error
 double c = 112.67;
 double error_c = pow(pow(0.55238,2) + pow(5.358,2),0.5); //propagated error from MAESTRO + range of values/2
-double sys_fluence_error = 27./170.; //15.9%
+double sys_fluence_error = 0.15; //15%
+//double sys_fluence_error = 0.; 
 
 
 Current Extract_Current(TString txtName, double voltage, double minFit, double maxFit, double fluence, double efluence)
@@ -33,7 +34,7 @@ Current Extract_Current(TString txtName, double voltage, double minFit, double m
   //Fits raw data
   TF1* fit = new TF1("fit","pol1", minFit, maxFit);
   fit->SetLineColor(kRed);
-  g->Fit(fit,"RN");
+  g->Fit(fit,"QRN");
 
   //Draws raw data with fit
   TCanvas* canvas = new TCanvas(txtName,txtName);
@@ -70,11 +71,11 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   TGraphErrors *g = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
   g->SetMarkerColor(kBlack);
   g->SetMarkerStyle(20);
-  g->SetMarkerSize(3);
+  g->SetMarkerSize(2);
   g->GetYaxis()->SetRangeUser(0,1e3);
   g->GetXaxis()->SetRangeUser(0,6e12);
-  g->GetXaxis()->SetTitle("#phi (pcm^{-2})");
-  g->GetYaxis()->SetTitle("|#Delta I| (-nA)");
+  g->GetXaxis()->SetTitle("#phi [pcm^{-2}]");
+  g->GetYaxis()->SetTitle("|#Delta I| [nA]");
   g->SetTitle("");
   TGaxis::SetMaxDigits(3);
 
@@ -110,7 +111,9 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   //Draws plot and fit
   TCanvas *Fluence = new TCanvas("MC40 Current v Fluence","MC40 Current v Fluence",600,700);
   Fluence->SetRightMargin(1);
+  Fluence->SetRightMargin(0.12);
   Fluence->SetTopMargin(1);
+  g->GetYaxis()->SetTitleOffset(1.3);
   TGaxis::SetMaxDigits(3);
   g->Draw("AP");
   //fit->Draw("same");
@@ -121,8 +124,10 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   latex.SetNDC();
   latex.SetTextSize(0.04);
   //latex.DrawLatex(0.49,0.2,"#kappa_{pol1 fit} = 2.222 #pm 0.110");
-  latex.DrawLatex(0.55,0.25,"#kappa = 2.21 #pm 0.08");
+  latex.DrawLatex(0.55,0.25,"#kappa = 2.21 #pm 0.40");
   gPad->RedrawAxis();
+
+  Fluence->SaveAs("MC40_results.root");
   
   //Sensor parameters
   double l{0.265}; //p cm^2
@@ -130,6 +135,10 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   double alphan{3.99e-17}; //A cm^-1
   double ealphan{0.03e-17}; //A cm^-1
 
+  
+  //Sys grad error
+  double sysError = 0.16;
+  
   //Calculates hardness factor from fit
   double theta   = fit->GetParameter(1); //nA cm^2
   double etheta  = fit->GetParError(1); //pol1 fit
@@ -143,40 +152,46 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   double ek  = pow(pow(ealpha/alphan,2)+pow((alpha*ealphan)/(alphan*alphan),2),0.5);
   double k1  = alpha1/alphan;
   double ek1 = pow(pow(ealpha1/alphan,2)+pow((alpha1*ealphan)/(alphan*alphan),2),0.5);
-
+  
   std::cout << "MC40 Alpha (pol1) = " << alpha << " +/- " << ealpha << std::endl;
   std::cout << "MC40 Hardness Factor (pol1) = " << k << " +/- " << ek << std::endl;
   std::cout << "**********************************************************************" <<std::endl;
-  std::cout << "MC40 Alpha (force 0) = " << alpha1 << " +/- " << ealpha1 << std::endl;
-  std::cout << "MC40 Hardness Factor (force 0) = " << k1 << " +/- " << ek1 << std::endl;
+  std::cout << "MC40 Alpha (force 0) = " << alpha1 << " +/- " << ealpha1 << " +/- " << alpha1*sysError << std::endl;
+  std::cout << "MC40 Hardness Factor (force 0) = " << k1 << " +/- " << ek1 << " +/- " << k1*sysError << std::endl;
   std::cout << "**********************************************************************" <<std::endl;
 
   std::cout << "pol1 fit equation: y = (" << theta << " +/- " << etheta << ")x + (" << fit->GetParameter(0) << " +/- " << fit->GetParError(0) << ")" << std::endl;
   std::cout << "force 0 fit equation: y = (" << theta1 << " +/- " << etheta1 << ")x" << std::endl;
 
-  std::string hardnessDatafile = "MC40_results.txt";
-  ofstream hardnessData;
-  hardnessData.open(hardnessDatafile);
-  if(!hardnessData.good())
-    {
-      std::cout<<"Error opening file '"+hardnessDatafile+"'..."<<std::endl;
-    }
-  else if(hardnessData.good())
-    {
-      hardnessData << "Fluence [p/cm^2]\tDelta I [nA]\teFluence [p/cm^2]\teDelta I [nA]"<< std::endl;
-      for(int i{0}; i<x.size(); ++i)
-	{
-	  hardnessData << x[i] << "\t" << y[i] << "\t" << ex[i] << "\t" << ey[i] << std::endl;
-	}
-    }
-  hardnessData.close();
+  // std::string hardnessDatafile = "MC40_results.txt";
+  // ofstream hardnessData;
+  // hardnessData.open(hardnessDatafile);
+  // if(!hardnessData.good())
+  //   {
+  //     std::cout<<"Error opening file '"+hardnessDatafile+"'..."<<std::endl;
+  //   }
+  // else if(hardnessData.good())
+  //   {
+  //     hardnessData << "Fluence [p/cm^2]\tDelta I [nA]\teFluence [p/cm^2]\teDelta I [nA]"<< std::endl;
+  //     for(int i{0}; i<x.size(); ++i)
+  // 	{
+  // 	  hardnessData << x[i] << "\t" << y[i] << "\t" << ex[i] << "\t" << ey[i] << std::endl;
+  // 	}
+  //   }
+  // hardnessData.close();
   
 }
 
 //Function to calculate error on scaled fluence
 double calc(double fluence, double efluence)
 {
-  return pow(pow(efluence/c,2.)+pow((fluence*error_c)/(c*c),2.) + pow(fluence*sys_fluence_error,2.),0.5);
+return pow(pow(efluence/c,2.)+pow((fluence*error_c)/(c*c),2.) + pow(fluence*sys_fluence_error,2.),0.5);
+}
+
+double eStatFluence(double fluence)
+{
+  return fluence*c*error_c/(c*c);
+  //return pow(pow((fluence*error_c)/(c*c),2.) + pow(fluence*sys_fluence_error,2.),0.5);
 }
 
 void Evaluate_MC40()
@@ -188,6 +203,12 @@ void Evaluate_MC40()
   
   std::vector<TString> filenamesIrr_combined = {"Diode25_IV_irradiated_0603.txt","Diode26_IV_irradiated_0603.txt","Diode27_IV_irradiated_0603.txt","Diode28_IV_irradiated_0603.txt","Diode29_IV_irradiated_0603.txt","Diode30_IV_irradiated_0603.txt","Diode31_IV_irradiated_0603.txt","Diode32_IV_irradiated_0603.txt","Diode33_IV_irradiated_0603.txt","Diode34_IV_irradiated_0603.txt","Diode35_IV_irradiated_0603.txt","Diode36_IV_irradiated_0603.txt","Diode37_IV_irradiated_0603.txt","Diode38_IV_irradiated_0603.txt","Diode39_IV_irradiated_0603.txt","Diode40_IV_irradiated_0603.txt","Diode41_IV_irradiated_0603.txt","Diode42_IV_irradiated_0603.txt","Diode43_IV_irradiated_0603.txt","Diode44_IV_irradiated_0603.txt","Diode45_IV_irradiated_0603.txt","Diode46_IV_irradiated_0603.txt","Diode47_IV_irradiated_0603.txt","Diode48_IV_irradiated_0603.txt"};  
 
+  //std::vector<double> efluencesIrr_combined;
+  //for(int nfluence = 0; nfluence<fluencesIrr_combined.size(); ++nfluence)
+  // {
+  //    efluencesIrr_combined.push_back(eStatFluence(fluencesIrr_combined[nfluence]));
+  // }
+  
   std::vector<double> efluencesIrr_combined = {9.95174e+10,9.95174e+10,2.67312e+11,2.67312e+11,4.19294e+11,4.19294e+11,5.18161e+11,5.18161e+11,7.60245e+11,7.60245e+11,5.50705e+11,5.50705e+11,2.23429e+12,2.23429e+12,4.02422e+11,4.02422e+11,1.11944e+11,1.11944e+11,1.63198e+11,1.63198e+11,7.58488e+10,7.58488e+10,3.44932e+10,3.44932e+10};
   
   std::vector<TString> filenames_combined = {"Diode25_IV_2602.txt","Diode26_IV_2602.txt","Diode27_IV_2602.txt","Diode28_IV_2602.txt","Diode29_IV_2602.txt","Diode30_IV_2602.txt","Diode31_IV_2602.txt","Diode32_IV_2602.txt","Diode33_IV_2602.txt","Diode34_IV_2602.txt","Diode35_IV_2602.txt","Diode36_IV_2602.txt","Diode37_IV_2602.txt","Diode38_IV_2602.txt","Diode39_IV_2602.txt","Diode40_IV_2802.txt","Diode41_IV_2802.txt","Diode42_IV_2802.txt","Diode43_IV_2802.txt","Diode44_IV_2802.txt","Diode45_IV_2802.txt","Diode46_IV_2802.txt","Diode47_IV_2802.txt","Diode48_IV_2802.txt"};

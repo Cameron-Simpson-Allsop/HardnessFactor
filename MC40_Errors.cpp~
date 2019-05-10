@@ -1,0 +1,40 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cmath>
+
+struct Data
+{
+  std::vector<double> fluences;
+  std::vector<double> currents;
+  std::vector<double> efluences;
+  std::vector<double> ecurrents;
+};
+
+void MC40_Errors()
+{
+  Data measured;
+  ifstream MC40;
+  std::string line{""};
+  double x,y,ex,ey;
+  std::vector<double> dummy, fluenceIter, currentIter;
+  MC40.open("MC40_results.txt");
+  int i{0};
+  if(MC40.good())
+    {
+      getline(MC40,line);
+      while(true)
+	{	  
+	  MC40>>x>>y>>ex>>ey;
+	  if(MC40.eof())break;
+	  measured.fluences.push_back(x);
+	  measured.currents.push_back(y);
+	  measured.efluences.push_back(ex);
+	  measured.ecurrents.push_back(ey);
+	  dummy.push_back(0.);
+	  ++i;
+	}
+    }
+
+
+}

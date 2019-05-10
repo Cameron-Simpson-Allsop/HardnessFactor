@@ -107,7 +107,7 @@ Data ReadFile(std::string filePath, std::string fileHeaderStart)
 
 double MaxDep(Data data, TString graphTitle, int DiodeNumber, std::string irradstate)
 {
-
+  rootlogonATLAS();
   
   double minFitLeft, minFitRight, maxFitLeft, maxFitRight, p0l, p1l, p0r, p1r, logdep;
   

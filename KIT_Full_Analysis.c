@@ -63,15 +63,15 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   TGraphErrors *g = new TGraphErrors(x.size(), &(x[0]), &(y[0]), &(ex[0]), &(ey[0]));
   g->SetMarkerColor(kBlack);
   g->SetMarkerStyle(20);
-  g->SetMarkerSize(3);
-  g->GetXaxis()->SetTitle("#phi (pcm^{-2})");
-  g->GetYaxis()->SetTitle("| #DeltaI | (nA)");
+  g->SetMarkerSize(2);
+  g->GetXaxis()->SetTitle("#phi [pcm^{-2}]");
+  g->GetYaxis()->SetTitle("|#DeltaI| [nA]");
   g->GetXaxis()->SetRangeUser(-0.02e15,0.6e15);
   g->GetYaxis()->SetRangeUser(-2e3,70e3);
   g->SetTitle("");
 
   //Fits data
-  TF1* fit = new TF1("fit","pol1",0,1.5e14);
+  TF1* fit = new TF1("fit","pol1",0,2.e14);
   fit->SetParameter(1,1e-12);
   fit->SetParameter(0,0);
   fit->SetLineColor(kBlack);
@@ -97,7 +97,9 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   //Draws plot and fit
   TCanvas *Fluence = new TCanvas("KIT Current v Fluence","KIT Current v Fluence",600,700);
   Fluence->SetRightMargin(1);
+  Fluence->SetRightMargin(0.12);
   Fluence->SetTopMargin(1);
+  g->GetYaxis()->SetTitleOffset(1.3);
   TGaxis::SetMaxDigits(3);
   g->Draw("AP");
   fit->Draw("same");
@@ -108,9 +110,11 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   latex.SetNDC();
   latex.SetTextSize(0.04);
   //latex.DrawLatex(0.4,0.2,"#kappa_{all points} = 1.97 #pm 0.21");
-  latex.DrawLatex(0.4,0.25,"#kappa = 2.20 #pm 0.28");
+  latex.DrawLatex(0.55,0.3,"#kappa = 2.20 #pm 0.43");
   gPad->RedrawAxis();
 
+  Fluence->SaveAs("KIT_results.root");
+  
   //Sensor parameters
   double l{0.265}; //p cm^2
   double w{0.03}; //cm
@@ -136,6 +140,23 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
 
  //std::cout << "KIT Alpha (force 0) = " << alpha1 << " +/- " << ealpha1 << std::endl;
  //std::cout << "KIT Hardness Factor (force 0) = " << k1 << " +/- " << ek1 << std::endl;
+
+  /* std::string hardnessDatafile = "KIT_results.txt"; */
+  /* ofstream hardnessData; */
+  /* hardnessData.open(hardnessDatafile); */
+  /* if(!hardnessData.good()) */
+  /*   { */
+  /*     std::cout<<"Error opening file '"+hardnessDatafile+"'..."<<std::endl; */
+  /*   } */
+  /* else if(hardnessData.good()) */
+  /*   { */
+  /*     hardnessData << "Fluence [p/cm^2]\tDelta I [nA]\teFluence [p/cm^2]\teDelta I [nA]"<< std::endl; */
+  /*     for(int i{0}; i<x.size(); ++i) */
+  /* 	{ */
+  /* 	  hardnessData << x[i] << "\t" << y[i] << "\t" << ex[i] << "\t" << ey[i] << std::endl; */
+  /* 	} */
+  /*   } */
+  /* hardnessData.close(); */
 
 }
 
