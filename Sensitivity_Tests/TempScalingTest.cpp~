@@ -1,0 +1,30 @@
+#include <iostream>
+
+double Scale(double current, double T)
+{
+  double Ea = 1.21;//eV
+  double kb = 8.617e-5;//eVK^-1
+  double Tr = 273.+20.;
+  double exponent = -(Ea/(2*kb))*((1/Tr)-(1/(T+273.)));
+
+  return current*pow(Tr/(T+273.),2)*exp(exponent);
+}
+
+void TempScalingTest()
+{
+  std::vector<double> voltage;
+  std::vector<double> current;
+  double rawCurrent;
+
+  for(int i{0}; i<150; ++i)
+    {
+      voltage.push_back(i);
+      rawCurrent = -exp(-i);
+      current.push_back(Scale(rawCurrent,20.));
+    }
+  TGraph *g = new TGraph(voltage.size(),&(voltage[0]),&(current[0]));
+  g->SetMarkerStyle(20);
+  g->SetMarkerSize(0.5);
+  TCanvas *canvas = new TCanvas("canvas","canvas",600,600);
+  g->Draw("AP");
+}

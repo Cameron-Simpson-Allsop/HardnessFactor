@@ -238,7 +238,24 @@ void PlotDiode(std::vector<CurrentWarmSetA> Currents)
 
 	std::cout << "Isidre Alpha = " << alpha << " +/- " << ealpha << std::endl;
 	std::cout << "Isidre Hardness Factor = " << k << " +/- " << ek << std::endl;
-	//std::cout << theta << " " << etheta << std::endl; 		
+	//std::cout << theta << " " << etheta << std::endl;
+
+	std::string hardnessDatafile = "Isidre_results.txt";
+	ofstream hardnessData;
+	hardnessData.open(hardnessDatafile);
+	if(!hardnessData.good())
+	  {
+	    std::cout<<"Error opening file '"+hardnessDatafile+"'..."<<std::endl;
+	  }
+	else if(hardnessData.good())
+	  {
+	    hardnessData << "Fluence [p/cm^2]\tDelta I [nA]\teFluence [p/cm^2]\teDelta I [nA]"<< std::endl;
+	    for(int i{0}; i<x.size(); ++i)
+	      {
+		hardnessData << x[i] << "\t" << y[i] << "\t" << ex[i] << "\t" << ey[i] << std::endl;
+	      }
+	  }
+	hardnessData.close();
 }
 
 void EvaluateDiodes() //Function to define relevant files and corresponging parameters.

@@ -1,0 +1,32 @@
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <FluenceData.hpp>
+
+FluenceData generateData()
+{
+  Data data;
+  ifstream filelist;
+  ifstream fluencelist;
+  std::string line{""};
+
+  filelist.open("Data/FileList");
+  fluencelist.open("Info.txt");
+
+  if(filelist.good() && fluencelist.good())
+    {
+      while(!filelist.eof())
+	{
+	  getline(filelist,line);
+	  
+	}      
+      while(!fluencelist.eof())
+	{
+	  getline(fluencelist,line);
+	  std::cout<<line<<std::endl;
+	}
+    }
+  else std::cout<<"Error opening file lists"<<std::endl;
+
+  return data;
+}

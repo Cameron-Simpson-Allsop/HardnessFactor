@@ -1,0 +1,31 @@
+#include<iostream>
+#include<fstream>
+#include<vector>
+
+void Efficiency_calibration()
+{
+  ifstream inFile;
+  inFile.open("Efficiency_calibration_data.txt");
+  std::string line{""};
+  std::vector<double> VEn,VEf,VeEn,VeEf;
+  getline(inFile,line);
+  while(!inFile.eof())
+    {
+      double En,Ef,eEn,eEf;
+      inFile>>En>>Ef>>eEn>>eEf;
+      VEn.push_back(En);//keV
+      VEf.push_back(Ef);
+      VeEn.push_back(eEn);
+      VeEf.push_back(eEf);      
+    }
+  inFile.close();
+  TGraphErrors *g = new TGraphErrors(VEn.size(),&(VEn[0]),&(VEf[0]),&(VeEn[0]),&(VeEf[0]));
+  g->GetXaxis()->SetTitle("Energy [keV]");
+  g->GetYaxis()->SetTitle("Detector Efficiency");
+  g->SetTitle("");
+  g->SetMarkerStyle(20);
+  TCanvas *canvas = new TCanvas("canvas","canvas",600,600);
+  canvas->SetLeftMargin(0.15);
+  g->Draw("AP");
+  canvas->SaveAs("Efficiency_calibration_surface.png");
+}

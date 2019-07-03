@@ -1,0 +1,2 @@
+Current related damage factor 7.32738e-17 +/- 3.80531e-18
+Hardness factor 1.83644 +/- 0.0963656

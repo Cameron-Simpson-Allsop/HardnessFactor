@@ -1,0 +1,73 @@
+#include <iostream>
+#include <string>
+#include <algorithm>
+#include "generateData.hpp"
+
+void Analysis()
+{
+  FluenceData data;
+  data = generateData();
+  std::string line{""};
+  std::string fileName;
+  ifstream inFile;
+  for(int i{0}; i<data.irradCVFiles.size(); ++i)
+    {
+      fileName = "Data/"+data.irradCVFiles[i];
+      inFile.open(fileName);
+      if(inFile.good())
+	{
+	  double lnvoltage, lncapacitance, elnvoltage, elncapacitance;
+	  std::vector<double> lnVoltage, lnCapacitance, elnVoltage, elnCapacitance;
+	  while(!inFile.eof())
+	    {
+	      getline(inFile,line);
+	      stringstream ss(line);
+	      ss >> lnvoltage >> lncapacitance >> elncapacitance;
+	      lnVoltage.push_back(lnvoltage);
+	      lnCapacitance.push_back(lncapacitance);
+	      elnVoltage.push_back(0.);
+	      elnCapacitance.push_back(elncapacitance);
+	    }
+	  inFile.close();
+	  TGraphErrors *CV = new TGraphErrors(lnVoltage.size(),&(lnVoltage[0]),&(lnCapacitance[0]),&(eVoltage[0]),&(elnCapacitance[0]));
+	  //fileName.erase(fileName.end()-4,4);
+	  std::string fileshort = fileName.substr(5,fileName.length()-9);
+	  TString filename = fileshort;
+	  CV->SetTitle(filename);
+	  CV->GetXaxis()->SetTitle("V [V]");
+	  CV->GetYaxis()->SetTitle("I [nA]");
+	  TCanvas *canvasCV = new TCanvas(filename,filename,600,600);
+	  CV->Draw("AP");
+	  canvasCV->SaveAs(filename+".root");
+	}      
+      
+      fileName = "Data/"+data.irradIVFiles[i];
+      inFile.open(fileName);
+      if(inFile.good())
+	{
+	  double voltage, current, evoltage, ecurrent;
+	  std::vector<double> Voltage, Current, eVoltage, eCurrent;
+	  while(!inFile.eof())
+	    {
+	      getline(inFile,line);
+	      stringstream ss(line);
+	      ss >> voltage >> current >> ecurrent;
+	      Voltage.push_back(voltage);
+	      Current.push_back(current);
+	      eVoltage.push_back(0.05);
+	      eCurrent.push_back(ecurrent);	  
+	    }
+	  inFile.close();
+	  TGraphErrors *IV = new TGraphErrors(Voltage.size(),&(Voltage[0]),&(Current[0]),&(eVoltage[0]),&(eCurrent[0]));
+	  //fileName.erase(fileName.end()-4,4);
+	  std::string fileshort = fileName.substr(5,fileName.length()-9);
+	  TString filename = fileshort;
+	  IV->SetTitle(filename);
+	  IV->GetXaxis()->SetTitle("V [V]");
+	  IV->GetYaxis()->SetTitle("I [nA]");
+	  TCanvas *canvasIV = new TCanvas(filename,filename,600,600);
+	  IV->Draw("AP");
+	  canvasIV->SaveAs(filename+".root");
+	}
+    }
+}

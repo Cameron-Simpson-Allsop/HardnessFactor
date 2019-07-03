@@ -157,8 +157,8 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   fit1->SetLineColor(kBlack);
   fit1->SetLineStyle(9);
   
-  g->Fit(fit,"RN");
-  g->Fit(fit1,"RN");
+  g->Fit(fit,"QRN");
+  g->Fit(fit1,"QRN");
 
   TLegend* leg = new TLegend(0.2, 0.75, 0.4, 0.85);
   leg->AddEntry(fit,"pol1 fit","l");
@@ -184,9 +184,11 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
   latex.SetNDC();
   latex.SetTextSize(0.04);
   //latex.DrawLatex(0.49,0.2,"#kappa_{pol1 fit} = 0.601 #pm 0.020");
-  latex.DrawLatex(0.49,0.25,"#kappa = 0.62 #pm 0.02");
+  latex.DrawLatex(0.49,0.25,"#kappa = 0.62 #pm 0.03");
   gPad->RedrawAxis();
 
+  Fluence->SaveAs("Isidre_results.root");
+  
   //Sensor parameters
   double l{0.5}; //p cm^2
   double w{0.03}; //cm
@@ -212,6 +214,23 @@ void Extract_Hardness_Factor(std::vector<Current> Data)
 
   std::cout << "Isidre Alpha (force 0) = " << alpha1 << " +/- " << ealpha1 << std::endl;
   std::cout << "Isidre Hardness Factor (force 0) = " << k1 << " +/- " << ek1 << std::endl;
+
+  std::string hardnessDatafile = "Isidre_results.txt";
+  ofstream hardnessData;
+  hardnessData.open(hardnessDatafile);
+  if(!hardnessData.good())
+    {
+      std::cout<<"Error opening file '"+hardnessDatafile+"'..."<<std::endl;
+    }
+  else if(hardnessData.good())
+    {
+      hardnessData << "Fluence [p/cm^2]\tDelta I [nA]\teFluence [p/cm^2]\teDelta I [nA]"<< std::endl;
+      for(int i{0}; i<x.size(); ++i)
+  	{
+  	  hardnessData << x[i] << "\t" << y[i] << "\t" << ex[i] << "\t" << ey[i] << std::endl;
+  	}
+    }
+  hardnessData.close();
   
 }
     

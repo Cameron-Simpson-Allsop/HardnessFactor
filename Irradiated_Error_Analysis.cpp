@@ -16,7 +16,8 @@ Hardness hardness(double fitparam, double efitparam)
 {
   Hardness kappa;
   //Sensor parameters
-  double l{0.265}; //p cm^2
+  double l{0.5}; //p cm^2
+  //double l{0.265}; //p cm^2
   double w{0.03}; //cm
   double alphan{3.99e-17}; //A cm^-1
   double ealphan{0.03e-17}; //A cm^-1
@@ -45,7 +46,7 @@ void Irradiated_Error_Analysis()
   std::string line{""};
   double x,y,ex,ey;
   std::vector<double> fluence,current,efluence,ecurrent;
-  MC40.open("KIT_results.txt");
+  MC40.open("Isidre_results.txt");
   int i{0};
   if(MC40.good())
     {
@@ -71,8 +72,8 @@ void Irradiated_Error_Analysis()
   //These change for other facilities
   //double ecalibration = ec/calibration;
   double ecalibration = 0.;
-  double enickel = 0.15;//15%
-  //double enickel = 0.04;
+  //double enickel = 0.15;//15%
+  double enickel = 0.04;
 
   TH1F*h_grad_stat=new TH1F("","",200, 0.,4.e-10);
   TH1F*h_grad_sys=new TH1F("","",200, 0.,4.e-10);
@@ -81,7 +82,7 @@ void Irradiated_Error_Analysis()
   TF1* fit1 = new TF1("fit1","pol1",0,2e14);
   //TF1* fit1 = new TF1("fit1","pol1",0,8e13);
   fit1->SetParameters(0., 5e-11);
-  //fit1->FixParameter(0,0.);
+  fit1->FixParameter(0,0.);
   TRandom*rndm=new TRandom3(0);
   std::vector<double> fluenceIter;
   std::vector<double> currentIter;
@@ -128,7 +129,7 @@ void Irradiated_Error_Analysis()
   //TF1* fit = new TF1("fit","pol1",0,6e12);
   TF1* fit = new TF1("fit","pol1",0,2e14);
   fit->SetParameters(0.,5e-11);
-  //fit->FixParameter(0,0.);
+  fit->FixParameter(0,0.);
   TCanvas *canvas = new TCanvas("stat","stat",600,600);
   g_current->Draw("AP");
   g_current->Fit(fit,"RN");
@@ -139,7 +140,7 @@ void Irradiated_Error_Analysis()
   TF1* fitoriginal = new TF1("fitoriginal","pol1",0,2e14);
   //TF1* fitoriginal = new TF1("fitoriginal","pol1",0,8e13);
   fitoriginal->SetParameters(0.,5e-11);
-  //fitoriginal->FixParameter(0,0.);
+  fitoriginal->FixParameter(0,0.);
   TCanvas *canvasoriginal = new TCanvas("original","original",600,600);
   g_original->Draw("AP");
   g_original->Fit(fitoriginal,"RN");

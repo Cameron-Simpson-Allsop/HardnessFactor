@@ -1,0 +1,7 @@
+#include <iostream>
+#include <vector>
+
+void high_hardness_plot()
+{
+  
+}
